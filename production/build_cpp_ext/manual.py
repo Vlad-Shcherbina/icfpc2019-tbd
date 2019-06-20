@@ -12,6 +12,7 @@ import subprocess
 import sys
 import threading
 import time
+import traceback
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Union
@@ -331,7 +332,12 @@ def worker(input_q, output_q):
         if step is None:
             break
         start = time.time()
-        p = subprocess.run(step.command, capture_output=True, text=True)
+        try:
+            p = subprocess.run(step.command, capture_output=True, text=True)
+        except:
+            traceback.print_exc()
+            output_q.put(BuildResult(output=step.output, success=False, time=0, stderr=''))
+            continue
         if p.returncode == 0:
             step.create_meta()
         output_q.put(BuildResult(
