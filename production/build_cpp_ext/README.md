@@ -3,6 +3,11 @@ and it recompiles it if necessary behind the scenes.
 
 Example usage is in `production/examples/cpp_demo/__init__.py`.
 
+To see it in action run the following command:
+```
+python -m production.examples.cpp_demo.demo
+```
+
 There are two environment variables to control compilation process:
 - `TBD_RELEASE`
   - `"0"` (default) - debug build, expensive defensive checks
