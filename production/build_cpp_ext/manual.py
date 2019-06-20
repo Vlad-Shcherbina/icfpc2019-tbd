@@ -121,8 +121,15 @@ def msvc_build_steps(*, name, sources, headers, release, build_dir, include_dirs
         includes = traverse_includes(source)
         for i in includes:
             assert i in headers, i
+
+        # normcase() here does not really make sense, but it's necessary
+        # because somehow when git hook is invoked from VSCode git thingie,
+        # it thinks that the current directory is "c:\whatever" even though
+        # it's actually "C:\whatever".
+        canonical_source = os.path.normcase(os.path.abspath(source))
+
         compile_steps.append(BuildStep(
-            command=[*cmd, '/Tp' + os.path.abspath(source), '/Fo' + obj],
+            command=[*cmd, '/Tp' + canonical_source, '/Fo' + obj],
             inputs=[source, *includes],
             output=obj))
 
