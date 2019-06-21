@@ -64,15 +64,15 @@ def rasterize_poly(poly: Poly) -> List[Row]:
 def visible(grid, p1: Pt, p2: Pt):
     dist = (p2 - p1)
     divider = (abs(dist.x) + abs(dist.y)) * 2 + 1
-    move = Pt(dist.x / divider, dist.y / divider)
+    move = (dist.x / divider, dist.y / divider)
 
-    current = p1 + Pt(0.5, 0.5)
+    current = (p1.x + 0.5, p1.y + 0.5)
 
     def to_int(p):
-        return Pt(int(p.x), int(p.y))
+        return Pt(int(p[0]), int(p[1]))
 
-    while to_int(current) != p2:
-        current += move
+    while not to_int(current) == p2:
+        current = (current[0] + move[0], current[1] + move[1])
         if to_int(current) == '#':
             return False
     return True

@@ -29,9 +29,6 @@ class Pt:
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
-    def __ne__(self, other):
-        return not (self == other)
-
     def rotated_ccw(self):
         return Pt(x=-self.y, y=self.x)
 
