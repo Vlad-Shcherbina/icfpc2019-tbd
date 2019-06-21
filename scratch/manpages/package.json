@@ -1,0 +1,25 @@
+{
+  "name": "golden-js",
+  "version": "0.0.1",
+  "description": "Golden and tracer. Wraps reference implementation.",
+  "main": "/dev/null",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "dependencies": {
+    "argparse": "^1.0.10",
+    "crypto2": "^2.0.0",
+    "puppeteer": "^1.11.0"
+  },
+  "devDependencies": {
+    "mocha": "^5.2.0",
+    "jsverify": "^0.8.4",
+    "underscore": "^1.8.2"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "MIT"
+}
