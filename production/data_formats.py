@@ -148,8 +148,7 @@ Action.DIRS = {
     Pt(1, 0): Action.WSAD('D'),
 }
 
-
-
+Action.WSAD2DIR = dict((v.s, k) for k, v in Action.DIRS.items())
 
 
 def compose_actions(lst: List[Action]):
