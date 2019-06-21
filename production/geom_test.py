@@ -47,4 +47,4 @@ def test_visibility():
 
 
 if __name__ == '__main__':
-    test_visibility()
+    utils.testmod()
