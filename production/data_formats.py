@@ -1,48 +1,8 @@
+import dataclasses
 from dataclasses import dataclass
-from typing import List
-import re
 
-'''
-IMPORTANT: we write Pt(x, y), but grid[y][x] for various grids. Such is life.
-
-At some point we'll write a grid class in C++, indexed with Pt's, which would mostly eliminate the confusion.
-
-'''
-
-@dataclass(frozen=True)
-class Pt:
-    x: int
-    y: int
-
-    @staticmethod
-    def parse(s):
-        m = re.match(r'\((\d+),(\d+)\)$', s)
-        assert m, s
-        return Pt(x=int(m.group(1)), y=int(m.group(2)))
-
-    def __add__(self, other):
-        return Pt(x=self.x + other.x, y=self.y + other.y)
-
-    def __sub__(self, other):
-        return Pt(x=self.x - other.x, y=self.y - other.y)
-
-    def rotated_ccw(self):
-        return Pt(x=-self.y, y=self.x)
-
-
-Poly = List[Pt]
-
-def parse_poly(s) -> Poly:
-    poly = []
-    s += ','
-    i = 0
-    r = re.compile(r'\((\d+),(\d+)\),')
-    while i < len(s):
-        m = r.match(s, pos=i)
-        assert m, (s, i)
-        poly.append(Pt(x=int(m.group(1)), y=int(m.group(2))))
-        i = m.end()
-    return poly
+from production import utils
+from production.geom import Pt, Poly, List, parse_poly, poly_bb, rasterize_poly
 
 
 @dataclass
@@ -82,6 +42,48 @@ class Task:
             obstacles=list(map(parse_poly, obstacles)),
             boosters=list(map(Booster.parse, boosters)),
         )
+
+
+@dataclass
+class GridTask:
+    start: Pt
+    boosters: List[Booster]
+    grid: List[List[str]]
+
+    @staticmethod
+    def from_problem(n):
+        s = utils.get_problem_raw(n)
+        return GridTask(Task.parse(s))
+
+
+    def __init__(self, task: Task, extra_border=False):
+        extra_border = 1 if extra_border else 0
+        bb = poly_bb(task.border)
+        width = bb.x2 - bb.x1 + 2 * extra_border
+        height = bb.y2 - bb.y1 + 2 * extra_border
+        offset = Pt(x=bb.x1 - extra_border, y=bb.y1 - extra_border)
+
+        self.start = task.start - offset
+        self.boosters=[dataclasses.replace(it, pos=it.pos - offset) for it in task.boosters]
+
+        # todo C++ grid
+
+        grid = [['#'] * width for _ in range(height)]
+
+        # todo: extra_border implies impassable border?
+
+        def render(poly, c):
+            for row in rasterize_poly(poly):
+                for x in range(row.x1 - offset.x + extra_border, row.x2 - offset.x + extra_border):
+                    assert grid[row.y - offset.y][x] != c
+                    grid[row.y - offset.y][x] = c
+
+        render(task.border, '.')
+
+        for obstacle in task.obstacles:
+            render(obstacle, '#')
+
+        self.grid = tuple(''.join(row) for row in grid)
 
 
 @dataclass

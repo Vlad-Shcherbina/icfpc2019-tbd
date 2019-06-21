@@ -1,11 +1,55 @@
+import dataclasses
 from dataclasses import dataclass
 from pathlib import Path
+from typing import List
+import re
 
-from production.data_formats import *
-from production import utils
+
+'''
+IMPORTANT: we write Pt(x, y), but grid[y][x] for various grids. Such is life.
+
+At some point we'll write a grid class in C++, indexed with Pt's, which would mostly eliminate the confusion.
+
+'''
+
+@dataclass(frozen=True)
+class Pt:
+    x: int
+    y: int
+
+    @staticmethod
+    def parse(s):
+        m = re.match(r'\((\d+),(\d+)\)$', s)
+        assert m, s
+        return Pt(x=int(m.group(1)), y=int(m.group(2)))
+
+    def __add__(self, other):
+        return Pt(x=self.x + other.x, y=self.y + other.y)
+
+    def __sub__(self, other):
+        return Pt(x=self.x - other.x, y=self.y - other.y)
+
+    def rotated_ccw(self):
+        return Pt(x=-self.y, y=self.x)
 
 
-@dataclass
+Poly = List[Pt]
+
+def parse_poly(s) -> Poly:
+    poly = []
+    s += ','
+    i = 0
+    r = re.compile(r'\((\d+),(\d+)\),')
+    while i < len(s):
+        m = r.match(s, pos=i)
+        assert m, (s, i)
+        poly.append(Pt(x=int(m.group(1)), y=int(m.group(2))))
+        i = m.end()
+    return poly
+
+
+
+@dataclass(frozen=True)
 class Rect:
     x1: int
     y1: int
@@ -21,7 +65,7 @@ def poly_bb(poly: Poly) -> Rect:
     return Rect(x1=x1, y1=y1, x2=x2, y2=y2)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Row:
     y: int
     x1: int
@@ -81,52 +125,6 @@ def visible(grid, p1: Pt, p2: Pt):
     return True
 
 
-def rasterize_to_grid(task: Task, extra_border=False):
-    extra_border = 1 if extra_border else 0
-    width = max(pt.x for pt in task.border) + 1 + 2 * extra_border
-    height = max(pt.y for pt in task.border) + 1 + 2 * extra_border
-    # todo: replace with a more efficient array of chars
-    grid = [['#'] * width for _ in range(height)]
-
-    # todo: extra_border implies impassable border?
-
-    for row in rasterize_poly(task.border):
-        for x in range(row.x1 + extra_border, row.x2 + extra_border):
-            assert grid[row.y][x] == '#'
-            grid[row.y][x] = '.'
-
-    for obstacle in task.obstacles:
-        for row in rasterize_poly(obstacle):
-            for x in range(row.x1 + extra_border, row.x2 + extra_border):
-                assert grid[row.y][x] == '.'
-                grid[row.y][x] = '#'
-
-    return tuple(''.join(row) for row in grid)
-
-
-def main():
-    #s = Path(utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01.desc').read_text()
-    s = utils.get_problem_raw(11)
-    t = Task.parse(s)
-    bb = poly_bb(t.border)
-
-    grid = [['#'] * (bb.x2 - bb.x1) for y in range(bb.y1, bb.y2)]
-
-    for row in rasterize_poly(t.border):
-        for x in range(row.x1, row.x2):
-            assert grid[row.y - bb.y1][x - bb.x1] == '#'
-            grid[row.y - bb.y1][x - bb.x1] = '.'
-
-    for obstacle in t.obstacles:
-        for row in rasterize_poly(obstacle):
-            for x in range(row.x1, row.x2):
-                assert grid[row.y - bb.y1][x - bb.x1] == '.'
-                grid[row.y - bb.y1][x - bb.x1] = '#'
-
-    for row in reversed(grid):
-        print(' '.join(row))
-
-
 if __name__ == '__main__':
     import logging
     logging.basicConfig(
@@ -137,5 +135,3 @@ if __name__ == '__main__':
     if find_spec('hintcheck'):
         import hintcheck
         hintcheck.hintcheck_all_functions()
-
-    main()

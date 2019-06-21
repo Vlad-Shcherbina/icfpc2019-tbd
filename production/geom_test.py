@@ -1,4 +1,6 @@
 from production.geom import *
+from production import utils
+from production.data_formats import Task, GridTask
 from copy import deepcopy
 
 
@@ -18,23 +20,9 @@ def test_visibility():
     # 5 ##.......
     # 6 ##.......
 
-    s = utils.get_problem_raw(12)
-    t = Task.parse(s)
-    bb = poly_bb(t.border)
-
-    grid = [['#'] * (bb.x2 - bb.x1) for y in range(bb.y1, bb.y2)]
-
-    for row in rasterize_poly(t.border):
-        for x in range(row.x1, row.x2):
-            assert grid[row.y - bb.y1][x - bb.x1] == '#'
-            grid[row.y - bb.y1][x - bb.x1] = '.'
-
-
-    for obstacle in t.obstacles:
-        for row in rasterize_poly(obstacle):
-            for x in range(row.x1, row.x2):
-                assert grid[row.y - bb.y1][x - bb.x1] == '.'
-                grid[row.y - bb.y1][x - bb.x1] = '#'
+    t = GridTask.from_problem(12)
+    # make mutable copy
+    grid = [[c for c in row] for row in t.grid]
 
     assert visible(grid, Pt(6, 2), Pt(6, 6))
     assert not visible(grid, Pt(2, 2), Pt(2, 6))

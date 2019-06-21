@@ -10,11 +10,10 @@ from production import geom, utils
 from production.data_formats import Task, Action, Pt
 
 
-
 class Game:
     def __init__(self, task: Task):
+        self.grid, offset = geom.rasterize_to_grid(task)
         self.task = task
-        self.grid = geom.rasterize_to_grid(task)
         self.height = len(self.grid)
         self.width = len(self.grid[0])
         self.pos = task.start
@@ -98,7 +97,7 @@ class Display:
 
 
 def interactive():
-    task = Task.parse(utils.get_problem_raw(3))
+    task = GridTask(Task.parse(utils.get_problem_raw(3)))
     game = Game(task)
 
     with contextlib.closing(Display(game)) as display:
