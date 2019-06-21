@@ -79,7 +79,7 @@ def solve(task: Task) -> List[Action]:
             d = p - prev[p]
             path.append(DIRS[d])
             p = prev[p]
-            assert p != None
+            assert p is not None
         path.reverse()
         print(path)
         solution += path
