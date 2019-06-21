@@ -57,3 +57,4 @@ def hello():
 # circular imports in this package organization are justified by
 # http://flask.pocoo.org/docs/1.0/patterns/packages/
 import production.dashboard.invocation_views
+import production.dashboard.task_and_solution_views

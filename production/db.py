@@ -41,6 +41,21 @@ def create_tables(conn):
 
         data JSON NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS tasks(
+        id SERIAL PRIMARY KEY,
+
+        -- like 'prob-042'
+        name TEXT NOT NULL UNIQUE,
+
+        -- gzipped task string
+        data BYTEA NOT NULL,
+
+        extra JSON NOT NULL,
+
+        invocation_id INTEGER NOT NULL REFERENCES invocations,
+        time TIMESTAMP WITH TIME ZONE NOT NULL
+    );
     ''')
 
 
