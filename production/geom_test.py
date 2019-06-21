@@ -39,10 +39,10 @@ def test_visibility():
     assert not visible(grid, Pt(2, 2), Pt(2, 6))
 
     # corners
-    assert visible(grid, Pt(2, 1), Pt(3, 4))
-    assert visible(grid, Pt(3, 4), Pt(2, 1))
-    assert visible(grid, Pt(2, 5), Pt(3, 2))
-    assert visible(grid, Pt(3, 2), Pt(2, 5))
+    assert visible(grid, Pt(1, 2), Pt(4, 3))
+    assert visible(grid, Pt(4, 3), Pt(1, 2))
+    assert visible(grid, Pt(5, 2), Pt(2, 3))
+    assert visible(grid, Pt(2, 3), Pt(5, 2))
     assert visible(grid, Pt(1, 1), Pt(5, 5))
 
 
