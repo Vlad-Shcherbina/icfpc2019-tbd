@@ -1,5 +1,19 @@
 const puppeteer = require('puppeteer')
 
+/*********
+To improve extra information passing around, you can
+add more if-statements to normalizeResult function right below.
+*********/
+
+normalizeResult = (x) => {
+  if (x.startsWith('Success')) {
+    return 'Success===' + x.match(/\d+/)
+  }
+  // TODO: put other prettifiers here
+  return x
+}
+
+exports.normalizeResult = normalizeResult
 init = async () => {
 	const browser = await puppeteer.launch({ headless: true })
 	const page = await browser.newPage()
@@ -36,10 +50,3 @@ run = async (p, m, s) => {
   return [result, p]
 }
 exports.run = run
-
-normalizeResult = (x) => {
-  if (x.startsWith('Success')) {
-    return 'Success ' + x.match(/\d+/)
-  }
-}
-exports.normalizeResult = normalizeResult
