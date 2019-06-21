@@ -246,7 +246,7 @@ def build_extension(caller_file, name, sources, headers, release):
             logger.info(f'{step.output} is already up-to-date')
         else:
             start = time.time()
-            p = subprocess.run(step.command, capture_output=True, text=True)
+            p = subprocess.run(step.command, capture_output=True, text=True, encoding='utf-8')
             print(p.stdout + p.stderr, end='', file=sys.stderr)
             assert p.returncode == 0
             logger.info(f'linking {step.output} took {time.time() - start:.2f} s')
