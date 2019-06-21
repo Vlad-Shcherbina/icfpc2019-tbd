@@ -61,6 +61,23 @@ def rasterize_poly(poly: Poly) -> List[Row]:
     return result
 
 
+def visible(grid, p1: Pt, p2: Pt):
+    dist = (p2 - p1)
+    divider = (abs(dist.x) + abs(dist.y)) * 2 + 1
+    move = Pt(dist.x / divider, dist.y / divider)
+
+    current = p1 + Pt(0.5, 0.5)
+
+    def to_int(p):
+        return Pt(int(p.x), int(p.y))
+
+    while to_int(current) != p2:
+        current += move
+        if to_int(current) == '#':
+            return False
+    return True
+
+
 def main():
     #s = Path(utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01.desc').read_text()
     s = utils.get_problem_raw(11)
