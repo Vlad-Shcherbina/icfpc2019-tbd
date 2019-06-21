@@ -1,0 +1,2 @@
+-r requirements.txt
+https://download.lfd.uci.edu/pythonlibs/t4jqbe6o/curses-2.2.1+utf8-cp37-cp37m-win_amd64.whl

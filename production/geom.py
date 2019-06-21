@@ -78,6 +78,29 @@ def visible(grid, p1: Pt, p2: Pt):
     return True
 
 
+def rasterize_to_grid(task: Task, extra_border=False):
+    extra_border = 1 if extra_border else 0
+    width = max(pt.x for pt in task.border) + 1 + 2 * extra_border
+    height = max(pt.y for pt in task.border) + 1 + 2 * extra_border
+    # todo: replace with a more efficient array of chars
+    grid = [['#'] * width for _ in range(height)]
+
+    # todo: extra_border implies impassable border?
+
+    for row in rasterize_poly(task.border):
+        for x in range(row.x1 + extra_border, row.x2 + extra_border):
+            assert grid[row.y][x] == '#'
+            grid[row.y][x] = '.'
+
+    for obstacle in task.obstacles:
+        for row in rasterize_poly(obstacle):
+            for x in range(row.x1 + extra_border, row.x2 + extra_border):
+                assert grid[row.y][x] == '.'
+                grid[row.y][x] = '#'
+
+    return tuple(''.join(row) for row in grid)
+
+
 def main():
     #s = Path(utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01.desc').read_text()
     s = utils.get_problem_raw(11)

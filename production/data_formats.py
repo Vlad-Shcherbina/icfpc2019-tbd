@@ -2,6 +2,12 @@ from dataclasses import dataclass
 from typing import List
 import re
 
+'''
+IMPORTANT: we write Pt(x, y), but grid[y][x] for various grids. Such is life.
+
+At some point we'll write a grid class in C++, indexed with Pt's, which would mostly eliminate the confusion.
+
+'''
 
 @dataclass(frozen=True)
 class Pt:
