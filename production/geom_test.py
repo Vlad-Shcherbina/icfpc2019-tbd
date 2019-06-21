@@ -46,25 +46,62 @@ def test_visibility():
     assert visible(grid, Pt(2, 3), Pt(5, 2))
     assert visible(grid, Pt(1, 1), Pt(5, 5))
 
-    # just to show which tiles are visible and which are not
-    # no pre-rendered example to compare    
-    w_x, w_y = 13, 13
-    grid[w_x][w_y] = 'o'
-    grid_copy = deepcopy(grid)
+    vis = render_visibility_grid(grid, Pt(x=13, y=12))
+
+    for row in vis:
+        print(' '.join(row))
+    # no comparison with expected because it's too large
+
+
+def test_visibility_small():
+    check_vis([
+        '. . + + +',
+        '. . # + .',
+        '. o . . .',
+        '. . . . .',
+    ])
+
+
+def check_vis(expected_vis):
+    expected_vis = [list(row.replace(' ', '')) for row in expected_vis]
+    grid = deepcopy(expected_vis)
+    eye = None
+    for y, row in enumerate(grid):
+        for x, c in enumerate(row):
+            if c in 'o+':
+                row[x] = '.'
+            if c == 'o':
+                assert eye is None
+                eye = Pt(x=x, y=y)
+
+    vis = render_visibility_grid(grid, Pt(x=1, y=2))
+    for row in vis:
+        print(' '.join(row))
+
+    assert vis == expected_vis
+
+
+def render_visibility_grid(grid, eye):
+    '''
+    o   eye location
+    .   visible
+    +   not visible
+    '''
+    vis = deepcopy(grid)
+    vis[eye.y][eye.x] = 'o'
     for y in range(len(grid)):
         for x in range(len(grid[y])):
-            v = visible(grid, Pt(w_x, w_y), Pt(x, y))
-            v2 = visible(grid, Pt(x, y), Pt(w_x, w_y))
+            v = visible(grid, eye, Pt(x=x, y=y))
+            v2 = visible(grid, Pt(x=x, y=y), eye)
             assert v == v2
             if grid[y][x] == '#':
                 assert not v
-            elif not v:
-                grid[y][x] = '+'
-
-    for y in range(len(grid)):
-        for x in range(len(grid[y])):
-            print(grid[y][x], end='')
-        print()
+            elif grid[y][x] == '.':
+                if not v:
+                    vis[y][x] = '+'
+            else:
+                assert False, grid[y][x]
+    return vis
 
 
 if __name__ == '__main__':
