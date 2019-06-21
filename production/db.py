@@ -56,6 +56,37 @@ def create_tables(conn):
         invocation_id INTEGER NOT NULL REFERENCES invocations,
         time TIMESTAMP WITH TIME ZONE NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS solutions(
+        id SERIAL PRIMARY KEY,
+
+        status TEXT NOT NULL,
+        -- 'DONE' - solution passed the emulator check
+        -- 'CHECK_FAIL' - solution was rejected by the emulator
+        -- 'FAIL' - solver failed
+        -- 'PASS' - solver refused to try this task
+        -- These states indicate that the solver failed in a deterministic way.
+        -- It will be used to avoid further reruns of the same solver.
+
+        scent TEXT NOT NULL,
+        -- Solver will not attempt a problem if there was another attempt
+        -- with the same scent.
+        -- Use strings like 'My solver 1.0' and bump it when the solver changed
+        -- significantly and you want to rerun it on all tasks.
+
+        data BYTEA,
+        -- NULL if status = 'FAIL' or 'PASS'
+
+        score BIGINT,
+        -- NULL if status != 'DONE'
+
+        extra JSON NOT NULL,
+        -- anything that is not the solution: logs, statistics, error messages
+
+        task_id INTEGER NOT NULL REFERENCES tasks,
+        invocation_id INTEGER NOT NULL REFERENCES invocations,
+        time TIMESTAMP WITH TIME ZONE NOT NULL
+    );
     ''')
 
 

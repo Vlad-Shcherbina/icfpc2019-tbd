@@ -74,7 +74,7 @@ class GreedySolver(Solver):
         [] = args
 
     def scent(self) -> str:
-        return 'greedy 0'
+        return 'greedy 1'
 
     def solve(self, task: str) -> SolverResult:
         task = Task.parse(task)

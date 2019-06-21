@@ -92,4 +92,47 @@ LIST_INVOCATIONS_TEMPLATE = '''\
 
 @app.route('/inv/<int:id>')
 def view_invocation(id):
-    return 'TODO'
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute('SELECT data FROM invocations WHERE id=%s', [id])
+    [inv] = cur.fetchone()
+
+    cur.execute('''
+        SELECT
+            id, status, score, task_id, scent, time
+        FROM solutions
+        WHERE invocation_id = %s
+    ''', [id])
+    solutions = cur.fetchall()
+
+    return memoized_render_template_string(VIEW_INVOCATION_TEMPLATE, **locals())
+
+VIEW_INVOCATION_TEMPLATE = '''\
+{% extends "base.html" %}
+{% block body %}
+<h3>Invocation info</h3>
+
+Command: <b>{{ inv['argv'] | join(' ') }}</b> <br>
+Version: {{ inv['version'] | render_version }} <br>
+Run by: <b>{{ inv['user'] }}</b> <br>
+
+<pre>{{ inv | json_dump }}</pre>
+
+{% if solutions %}
+<h4>Solutions</h4>
+<table>
+{% for id, status, score, task_id, scent, time in solutions %}
+    <tr>
+        <td>{{ url_for('view_task', id=task_id) | linkify }}</td>
+        <td>{{ url_for('view_solution', id=id) | linkify }}</td>
+        <td>{{ status }}</td>
+        <td>{{ score }}</td>
+        <td>{{ scent }}</td>
+        <td>{{ time.strftime('%m-%d %H:%M:%S') }}</td>
+    </tr>
+{% endfor %}
+</table>
+{% endif %}
+{% endblock %}
+'''
