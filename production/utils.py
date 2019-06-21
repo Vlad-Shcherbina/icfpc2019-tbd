@@ -12,10 +12,13 @@ def get_problem_raw(n):
 
 
 def testmod():
-    'Black magic'
+    '''Black magic.
+
+    Call it from under "if name == '__main__'" from test modules.
+    Then running such test module as a script will run all tests in this module.
+    '''
     import pytest
     import inspect
     frm = inspect.stack()[1]
     mod = inspect.getmodule(frm[0])
     pytest.main(['-vx', mod.__file__])
-
