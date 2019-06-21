@@ -14,3 +14,6 @@ def test_greedy_on_example():
     print(res)
     assert res.time is not None
 
+if __name__ == '__main__':
+    utils.testmod()
+

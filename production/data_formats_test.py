@@ -1,6 +1,6 @@
 from zipfile import ZipFile
 
-from production.data_formats import Task, Pt, Booster, Action, compose_actions
+from production.data_formats import Task, GridTask, Pt, Booster, Action, compose_actions
 from production import utils
 
 
@@ -34,6 +34,25 @@ def test_compose():
         Action.drill(),
         ]
     assert compose_actions(actions) == 'WSADZEQB(1,-2)FL'
+
+
+def test_grid_with_border():
+    g1 = GridTask.from_problem(3)
+    g2 = GridTask.from_problem(3, True)
+    assert g1.width + 2 == g2.width
+    assert g1.height + 2 == g2.height
+    gr1, gr2 = g1.grid, g2.grid
+
+    for y in range(g2.height):
+        assert gr2[y][0] == gr2[y][g2.width - 1] == '#'
+
+    for x in range(g2.width):
+        assert gr2[0][x] == gr2[g2.height - 1][x] == '#'
+
+    for y in range(g1.height):
+        for x in range(g1.width):
+            assert gr1[y][x] == gr2[y + 1][x + 1]
+
 
 if __name__ == '__main__':
     utils.testmod()

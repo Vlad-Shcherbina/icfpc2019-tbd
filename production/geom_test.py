@@ -21,8 +21,7 @@ def test_visibility():
     # 6 ##.......
 
     t = GridTask.from_problem(12)
-    # make mutable copy
-    grid = [[c for c in row] for row in t.grid]
+    grid = t.mutable_grid()
 
     assert visible(grid, Pt(6, 2), Pt(6, 6))
     assert not visible(grid, Pt(2, 2), Pt(2, 6))

@@ -8,32 +8,11 @@ from production.geom import poly_bb, rasterize_poly
 from production.solvers.interface import *
 
 
-DIRS = {
-    Pt(0, 1): Action.WSAD('W'),
-    Pt(0, -1): Action.WSAD('S'),
-    Pt(-1, 0): Action.WSAD('A'),
-    Pt(1, 0): Action.WSAD('D'),
-}
-
-
 def solve(task: Task) -> List[Action]:
-    bb = poly_bb(task.border)
+    task = GridTask(task, with_border=True)
 
-    grid = [['#'] * (bb.x2 - bb.x1 + 2) for y in range(bb.y2 - bb.y1 + 2)]
-
-    for row in rasterize_poly(task.border):
-        for x in range(row.x1, row.x2):
-            assert grid[row.y - bb.y1 + 1][x - bb.x1 + 1] == '#'
-            grid[row.y - bb.y1 + 1][x - bb.x1 + 1] = '.'
-
-    for obstacle in task.obstacles:
-        for row in rasterize_poly(obstacle):
-            for x in range(row.x1, row.x2):
-                assert grid[row.y - bb.y1 + 1][x - bb.x1 + 1] == '.'
-                grid[row.y - bb.y1 + 1][x - bb.x1 + 1] = '#'
-
-
-    worker_pos = task.start - Pt(x=bb.x1 - 1, y=bb.y1 - 1)
+    grid = task.mutable_grid()
+    worker_pos = task.start
     manips = [Pt(0, 0), Pt(1, 0), Pt(1, 1), Pt(1, -1)]
     #logger.info(worker_pos)
 
@@ -65,7 +44,7 @@ def solve(task: Task) -> List[Action]:
 
             new_frontier = []
             for p in frontier:
-                for d in DIRS.keys():
+                for d in Action.DIRS.keys():
                     p2 = p + d
                     if p2 not in prev and grid[p2.y][p2.x] != '#':
                         prev[p2] = p
@@ -78,7 +57,7 @@ def solve(task: Task) -> List[Action]:
         p = dst
         while p != worker_pos:
             d = p - prev[p]
-            path.append(DIRS[d])
+            path.append(Action.DIRS[d])
             p = prev[p]
             assert p is not None
         path.reverse()
