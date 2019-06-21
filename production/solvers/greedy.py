@@ -5,6 +5,7 @@ from pathlib import Path
 from production import utils
 from production.data_formats import *
 from production.geom import poly_bb, rasterize_poly
+from production.solvers.interface import *
 
 
 DIRS = {
@@ -34,7 +35,7 @@ def solve(task: Task) -> List[Action]:
 
     worker_pos = task.start - Pt(x=bb.x1 - 1, y=bb.y1 - 1)
     manips = [Pt(0, 0), Pt(1, 0), Pt(1, 1), Pt(1, -1)]
-    logger.info(worker_pos)
+    #logger.info(worker_pos)
 
     cells_to_wrap = sum(row.count('.') for row in grid)
     solution = []
@@ -44,9 +45,9 @@ def solve(task: Task) -> List[Action]:
             if grid[p.y][p.x] == '.':
                 grid[p.y][p.x] = '+'
                 cells_to_wrap -= 1
-        for row in reversed(grid):
-            print(' '.join(row))
-        print(cells_to_wrap)
+        # for row in reversed(grid):
+        #     print(' '.join(row))
+        # print(cells_to_wrap)
         if cells_to_wrap == 0:
             break
 
@@ -81,12 +82,27 @@ def solve(task: Task) -> List[Action]:
             p = prev[p]
             assert p is not None
         path.reverse()
-        print(path)
+        # print(path)
         solution += path
 
         worker_pos = dst
 
     return solution
+
+
+class GreedySolver(Solver):
+    def __init__(self, args: List[str]):
+        [] = args
+
+    def scent(self) -> str:
+        return 'greedy 0'
+
+    def solve(self, task: str) -> SolverResult:
+        task = Task.parse(task)
+        sol = solve(task)
+        return SolverResult(
+            data=compose_actions(sol),
+            expected_score=len(sol))
 
 
 def main():
