@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{% block title %}{% endblock %}</title>
+</head>
+
+<body>
+  <a href=" {{ url_for('hello') }}">hello</a> |
+  <a href=" {{ url_for('list_invocations') }}">invocations</a>
+  <hr>
+
+  {% block body %}
+  {% endblock %}
+</body>
