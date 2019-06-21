@@ -9,4 +9,4 @@ for x in *zip; do
   unzip $x
 done
 
-npm i
+# npm i

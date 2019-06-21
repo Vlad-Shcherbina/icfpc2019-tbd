@@ -1,10 +1,25 @@
-import os
-import os.path
-
+from production import utils
 from production.golden.validate import run
-from production.golden.validate import do_run
 from production.golden.validate import ValidatorResult
 
+
+def test_valid_solution():
+    task = (utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01.desc').read_text()
+    sol = (utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01-1.sol').read_text()
+    result = run(task, sol)
+    print(result)
+    assert result.time == 48
+
+
+def test_invalid_solution():
+    task = (utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01.desc').read_text()
+    sol = 'WSAD'
+    result = run(task, sol)
+    print(result)
+    assert result.time is None
+
+
+'''
 exampleDesc = "(0,0),(10,0),(10,10),(0,10)#(0,0)#(4,2),(6,2),(6,7),(4,7);(5,8),(6,8),(6,9),(5,9)#B(0,1);B(1,1);F(0,2);F(1,2);L(0,3);X(0,9)\n".encode('utf-8')
 exampleSol1 = "WDWB(1,2)DSQDB(-3,1)DDDWWWWWWWSSEDSSDWWESSSSSAAAAAQQWWWWWWW\n".encode('utf-8')
 exampleWrg1 = "DWDSQDDDDWWWWWWWSSEDSSDWWESSSSSAAAAAQQWWWWWWW\n".encode('utf-8')
@@ -30,3 +45,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+'''

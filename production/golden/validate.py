@@ -7,6 +7,8 @@ from tempfile import NamedTemporaryFile
 from dataclasses import dataclass
 from typing import Optional
 
+from production import utils
+
 # This module lets you run your solutions against reference implementaiton
 # It is future-proof in a sense that all the runs have "tag" argument
 # that we will later be able to use to store results of solving in a database.
@@ -16,8 +18,8 @@ from typing import Optional
 def classify(result):
     if result.startswith("Success"):
         y = result.split("===")
-        return ValidatorResult(time=int(y[1]), extra=y[0])
-    return ValidatorResult(time=None, extra=result)
+        return ValidatorResult(time=int(y[1]), extra={})
+    return ValidatorResult(time=None, extra=dict(error=result))
 
 @dataclass
 class ValidatorResult:
@@ -31,13 +33,26 @@ def do_run(tag: str, map: str, sol: str) -> ValidatorResult:
         universal_newlines=True)
     return classify(result.strip())
 
-def run(map: bytes, solution: bytes) -> ValidatorResult:
+def run(map: str, solution: str) -> ValidatorResult:
+    assert (utils.project_root() / 'production' / 'golden' / 'node_modules').exists(), '''
+    node_modules/ not found
+    You probably need to run the following:
+        cd production/golden
+        npm install
+    '''
+    assert (utils.project_root() / 'production' / 'golden' / 'icfpcontest2019.github.io').exists(), '''
+    icfpcontest2019.github.io/ not found
+    You probably need to run the following:
+        cd production/golden
+        ./setupGolden.sh
+    '''
+
     map_name = tempfile.NamedTemporaryFile(delete=False).name
-    with open(map_name, 'wb') as fout:
+    with open(map_name, 'w') as fout:
         fout.write(map)
 
     solution_name = tempfile.NamedTemporaryFile(delete=False).name
-    with open(solution_name, 'wb') as fout:
+    with open(solution_name, 'w') as fout:
         fout.write(solution)
 
     result = do_run("0.1.0-lgtn", str(map_name), str(solution_name))
