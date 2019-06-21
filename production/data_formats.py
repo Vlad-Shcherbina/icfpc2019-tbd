@@ -4,7 +4,7 @@ import re
 
 
 @dataclass
-class Point:
+class Pt:
     x: int
     y: int
 
@@ -12,10 +12,19 @@ class Point:
     def parse(s):
         m = re.match(r'\((\d+),(\d+)\)$', s)
         assert m, s
-        return Point(x=int(m.group(1)), y=int(m.group(2)))
+        return Pt(x=int(m.group(1)), y=int(m.group(2)))
+
+    def __add__(self, other):
+        return Pt(x=self.x + other.x, y=self.y + other.y)
+
+    def __sub__(self, other):
+        return Pt(x=self.x - other.x, y=self.y - other.y)
+
+    def rotated_ccw(self):
+        return Pt(x=-self.y, y=self.x)
 
 
-Poly = List[Point]
+Poly = List[Pt]
 
 def parse_poly(s) -> Poly:
     poly = []
@@ -25,7 +34,7 @@ def parse_poly(s) -> Poly:
     while i < len(s):
         m = r.match(s, pos=i)
         assert m, (s, i)
-        poly.append(Point(x=int(m.group(1)), y=int(m.group(2))))
+        poly.append(Pt(x=int(m.group(1)), y=int(m.group(2))))
         i = m.end()
     return poly
 
@@ -33,19 +42,19 @@ def parse_poly(s) -> Poly:
 @dataclass
 class Booster:
     code: str  # 'B', 'F', 'L', 'X'
-    pos: Point
+    pos: Pt
 
     @staticmethod
     def parse(s):
         code = s[0]
         assert code in list('BFLX')
-        return Booster(code=code, pos=Point.parse(s[1:]))
+        return Booster(code=code, pos=Pt.parse(s[1:]))
 
 
 @dataclass
 class Task:
     border: Poly
-    start: Point
+    start: Pt
     obstacles: List[Poly]
     boosters: List[Booster]
 
@@ -63,7 +72,7 @@ class Task:
 
         return Task(
             border=parse_poly(border),
-            start=Point.parse(start),
+            start=Pt.parse(start),
             obstacles=list(map(parse_poly, obstacles)),
             boosters=list(map(Booster.parse, boosters)),
         )

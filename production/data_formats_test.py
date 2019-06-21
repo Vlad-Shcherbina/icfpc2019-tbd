@@ -1,6 +1,6 @@
 from zipfile import ZipFile
 
-from production.data_formats import Task, Point, Booster, Action, compose_actions
+from production.data_formats import Task, Pt, Booster, Action, compose_actions
 from production import utils
 
 
@@ -8,8 +8,8 @@ def test_parse_example_task():
     s = '(0,0),(10,0),(10,10),(0,10)#(0,0)#(4,2),(6,2),(6,7),(4,7);(5,8),(6,8),(6,9),(5,9)#B(0,1);B(1,1);F(0,2);F(1,2);L(0,3);X(0,9)'
     t = Task.parse(s)
     print(t)
-    assert t.obstacles[1] == [Point(5, 8), Point(6, 8), Point(6, 9), Point(5, 9)]
-    assert t.boosters[0] == Booster(code='B', pos=Point(0, 1))
+    assert t.obstacles[1] == [Pt(5, 8), Pt(6, 8), Pt(6, 9), Pt(5, 9)]
+    assert t.boosters[0] == Booster(code='B', pos=Pt(0, 1))
 
 
 def test_parse_all_problems():
