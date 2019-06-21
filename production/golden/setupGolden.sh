@@ -8,3 +8,5 @@ cd "$_c/download/"
 for x in *zip; do
   unzip $x
 done
+
+npm i
