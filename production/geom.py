@@ -73,7 +73,8 @@ def visible(grid, p1: Pt, p2: Pt):
 
     while not to_int(current) == p2:
         current = (current[0] + move[0], current[1] + move[1])
-        if to_int(current) == '#':
+        p = to_int(current) 
+        if grid[p.x][p.y] == '#':
             return False
     return True
 
