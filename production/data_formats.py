@@ -67,3 +67,45 @@ class Task:
             obstacles=list(map(parse_poly, obstacles)),
             boosters=list(map(Booster.parse, boosters)),
         )
+
+
+@dataclass
+class Action:
+    s : str
+
+    def __repr__(self):
+        return self.s
+
+    @staticmethod
+    def WSAD(c: str):
+        'Other movement->action methods shall be added as useful move encoding is determined'
+        assert c in 'WASD'
+        return Action(c)
+
+    @staticmethod
+    def wait():
+        return Action('Z')
+
+    @staticmethod
+    def turnCW():
+        return Action('E')
+
+    @staticmethod
+    def turnCCW():
+        return Action('Q')
+
+    @staticmethod
+    def attach(dx, dy):
+        return Action(f'B({dx},{dy})')
+
+    @staticmethod
+    def wheels():
+        return Action('F')
+
+    @staticmethod
+    def drill():
+        return Action('L')
+
+
+def compose_actions(lst: List[Action]):
+    return ''.join(map(str, lst))

@@ -1,6 +1,6 @@
 from zipfile import ZipFile
 
-from production.data_formats import *
+from production.data_formats import Task, Point, Booster, Action, compose_actions
 from production import utils
 
 
@@ -22,3 +22,18 @@ def test_parse_all_problems():
             with z.open(filename, 'r') as fin:
                 s = fin.read().decode()
                 t = Task.parse(s)
+
+
+def test_compose():
+    actions = [Action.WSAD(c) for c in 'WSAD'] + [
+        Action.wait(),
+        Action.turnCW(),
+        Action.turnCCW(),
+        Action.attach(1, -2),
+        Action.wheels(),
+        Action.drill(),
+        ]
+    assert compose_actions(actions) == 'WSADZEQB(1,-2)FL'
+
+if __name__ == '__main__':
+    utils.testmod()
