@@ -3,7 +3,7 @@ from typing import List
 import re
 
 
-@dataclass
+@dataclass(frozen=True)
 class Pt:
     x: int
     y: int
@@ -82,7 +82,7 @@ class Task:
 class Action:
     s : str
 
-    def __repr__(self):
+    def __str__(self):
         return self.s
 
     @staticmethod
