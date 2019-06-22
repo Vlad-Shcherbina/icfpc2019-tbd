@@ -46,7 +46,7 @@ def solve(task: Task) -> List[Action]:
             for p in frontier:
                 for d in Action.DIRS.keys():
                     p2 = p + d
-                    if p2 not in prev and grid[p2.y][p2.x] != '#':
+                    if p2 not in prev and grid[p2.y][p2.x] in '.+':
                         prev[p2] = p
                         new_frontier.append(p2)
             frontier = new_frontier

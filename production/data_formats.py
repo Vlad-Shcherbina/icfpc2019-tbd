@@ -19,6 +19,16 @@ class Booster:
         assert code in list('BFLXRC')
         return Booster(code=code, pos=Pt.parse(s[1:]))
 
+    def description(s):
+        'Black magic: can be called both on strings and on instances'
+        if isinstance(s, Booster):
+            s = s.code
+        return {
+            'B': 'extension',
+            'F': 'wheel',
+            'L': 'drill',
+        }[s]
+
 
 @dataclass
 class Task:
@@ -91,7 +101,14 @@ class GridTask:
 
         grid = [['#'] * width for _ in range(height)]
 
-        # todo: with_border implies impassable border?
+        if with_border:
+            # border is made of undrillable walls
+            for y in range(height):
+                grid[y][0] = grid[y][width - 1] = 'H'
+
+            for x in range(width):
+                grid[0][x] = grid[height - 1][x] = 'H'
+
 
         def render(poly, c):
             for row in rasterize_poly(poly):

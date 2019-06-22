@@ -28,6 +28,8 @@ Interactive controls:
 ESC - quit
 WASD - movement
 QE - turning
+FLB - boosters
+Space or Anykey - dismiss error message
 '''
 
 class Colormapping(defaultdict):
@@ -104,6 +106,13 @@ class Display:
             stdscr.addstr(curses.LINES - 1, 0, status_line, colormapping[curses.COLOR_YELLOW | BRIGHT, curses.COLOR_RED])
         else:
             status_line = f'{game.turn} ' + ' '.join(f'{b}={game.inventory[b]}' for b in Booster.CODES)
+
+            if game.wheels_timer:
+                status_line += f' WHEELS({game.wheels_timer})'
+
+            if game.drill_timer:
+                status_line += f' DRILL({game.drill_timer})'
+
             if extra_status:
                 status_line += ' '
                 status_line += extra_status

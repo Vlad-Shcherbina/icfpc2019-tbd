@@ -18,11 +18,13 @@ class Game:
         self.boosters = task.boosters
         self.turn = 0
         self.inventory = Counter()
+        self.wheels_timer = 0
+        self.drill_timer = 0
 
         self.manipulator = [Pt(1, -1), Pt(1, 0), Pt(1, 1), Pt(0, 0)]
         self.world_manipulator = []
         self.wrapped = set()
-        self.unwrapped = {p for p in self.task.grid_iter() if self.grid[p.y][p.x] != '#'}
+        self.unwrapped = {p for p in self.task.grid_iter() if self.grid[p.y][p.x] == '.'}
         self.update_wrapped()
         self.actions = []
 
@@ -50,8 +52,10 @@ class Game:
 
 
     def apply_action(self, action: Action):
-        if action.s in 'WSAD':
-            np = self.pos + action.WSAD2DIR[action.s]
+        act = action.s
+
+        if act in 'WSAD':
+            np = self.pos + action.WSAD2DIR[act]
             if self.grid[np.y][np.x] != '.':
                 raise InvalidActionException(f'Can\'t move into a tile: {self.grid[np.y][np.x]!r}')
             self.pos = np
@@ -62,13 +66,28 @@ class Game:
                     self.inventory.update([booster.code])
                     self.boosters.remove(booster)
             self.update_wrapped()
-        elif action.s == 'Q':
+
+        elif act == 'Q':
             self.manipulator = [p.rotated_ccw() for p in self.manipulator]
             self.update_wrapped()
-        elif action.s == 'E':
+
+        elif act == 'E':
             self.manipulator = [p.rotated_cw() for p in self.manipulator]
             self.update_wrapped()
+
+        elif act in 'LF':
+            if not self.inventory[act]:
+                raise InvalidActionException('Out of {}s!'.format(Booster.description(act)))
+            self.inventory.subtract(act)
+            if act == 'L':
+                self.drill_timer = 31 # not including current turn?
+            else:
+                self.wheels_timer = 51 # same
+
         else:
             raise InvalidActionException(f'Unknown action {action}')
+
         self.actions.append(action)
         self.turn += 1
+        self.drill_timer = max(self.drill_timer - 1, 0)
+        self.wheels_timer = max(self.wheels_timer - 1, 0)
