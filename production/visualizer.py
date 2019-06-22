@@ -119,10 +119,7 @@ class Display:
 
         return Pt(x, y)
 
-
-
-    # pass game here in case at some point it becomes purely functional
-    def draw(self, game: Game, extra_status = ''):
+    def draw_initial(self, game: Game):
         stdscr, pad = self.stdscr, self.pad
 
 
@@ -145,6 +142,27 @@ class Display:
             for x, c in enumerate(row):
                 char(Pt(x, y), c, FgColors.Dungeon)
 
+
+    # pass game here in case at some point it becomes purely functional
+    def draw(self, game: Game, extra_status = ''):
+        stdscr, pad = self.stdscr, self.pad
+
+
+        def char(p, char, fgcolor):
+            offset = Pt(1, 1)
+            bg_color = curses.COLOR_BLUE if game.is_wrapped(p) else curses.COLOR_BLACK
+            p = p + offset
+            pad.addstr(self.height - p.y + 1, p.x * 2, char + ' ', colormapping[fgcolor, bg_color])
+        
+        bot = game.bots[self.current]
+        area = max(bot.pos.manhattan_dist(bot.pos + m) for m in bot.manipulator)
+
+        for y in range(bot.pos.y - area, bot.pos.y + area + 1):
+            for x in range(bot.pos.x - area, bot.pos.x + area + 1):
+                if not game.in_bounds(Pt(x, y)):
+                    continue
+                char(Pt(x, y), game.grid[y][x], FgColors.Dungeon)
+
         for b in game.boosters:
             char(b.pos, b.code, FgColors.Booster)
 
@@ -160,8 +178,6 @@ class Display:
 
         for b in game.bots:
             char(b.pos, '@', FgColors.InactivePlayer)
-
-        bot = game.bots[self.current]
 
         char(bot.pos, '@', FgColors.Player)
 
@@ -227,6 +243,7 @@ def interactive(task_number):
 
     with contextlib.closing(Display(game)) as display:
         code, c = '', ''
+        display.draw_initial(game)
 
         while not score:
             display.draw(game, f'lastchar = {code} {c!r}')
