@@ -19,7 +19,7 @@ class Pt:
 
     @staticmethod
     def parse(s):
-        m = re.match(r'\((\d+),(\d+)\)$', s)
+        m = re.match(r'\((-?\d+),(-?\d+)\)$', s)
         assert m, s
         return Pt(x=int(m.group(1)), y=int(m.group(2)))
 

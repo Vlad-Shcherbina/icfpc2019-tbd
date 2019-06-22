@@ -159,6 +159,7 @@ def interactive(task_number, use_db=True):
             display.draw(game, f'lastchar = {code} {c!r}')
 
             code = display.stdscr.getch()
+
             action = None
 
             c = chr(code).upper()
@@ -166,8 +167,15 @@ def interactive(task_number, use_db=True):
             if c in '\x1B':
                 break
 
-            # todo: parameterized commands B(uild manip) and T(eleport)
-            action = Action.simple_action(c)
+            if c in Action.SIMPLE:
+                action = Action.simple_action(c)
+
+            # to perform complex action type it without spaces: B(1,-1)
+            elif c in Action.PARAM:
+                while c[-1] != ')':
+                    code = display.stdscr.getch()
+                    c = c + chr(code).upper()
+                action = Action.parameterized_action(c)
 
             if action:
                 try:

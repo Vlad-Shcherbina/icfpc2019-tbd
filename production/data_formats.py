@@ -12,12 +12,13 @@ class Booster:
     code: str  # char, actually
     pos: Pt
 
-    CODES: ClassVar[str] = 'BFL' # 'X' is a black sheep
+    # todo: remove X or somehow deal with it being not pickable
+    CODES: ClassVar[str] = 'BFLRCX'
 
     @staticmethod
     def parse(s):
         code = s[0]
-        assert code in list('BFLXRC')
+        assert code in Booster.CODES
         return Booster(code=code, pos=Pt.parse(s[1:]))
 
     def description(s):
@@ -28,6 +29,8 @@ class Booster:
             'B': 'extension',
             'F': 'wheel',
             'L': 'drill',
+            'C': 'clones',
+            'R': 'teleport'
         }[s]
 
 
@@ -132,6 +135,9 @@ param_action_re = re.compile(r'[B|T]\(-?\d+,-?\d+\)') # B(-1,2) or T(3,5)
 class Action:
     s : str
 
+    SIMPLE: ClassVar[str] = 'WSADZQEFLRC' # 'X' is not a pickable booster
+    PARAM: ClassVar[str] = 'BT' # 'X' is not a pickable booster
+
     def __str__(self):
         return self.s
 
@@ -145,7 +151,7 @@ class Action:
     @staticmethod
     def simple_action(c: str):
         'Returns None on failure, for your convenience'
-        if c in 'WSADZQEFLRC':
+        if c in Action.SIMPLE:
             return Action(c)
 
     @staticmethod
