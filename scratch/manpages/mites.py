@@ -14,11 +14,13 @@ def solve(puz: Puzzle) -> Task:
                 Pt(puz.size, 0),
                 Pt(puz.size, puz.size),
                 Pt(0, puz.size)]
-    include = puz.ioPoints[0]
-    omit    = puz.ioPoints[1]
+    include   = puz.ioPoints[0]
+    omit      = puz.ioPoints[1]
+    tentacles = []
     for p in omit:
         mit = stalagmitable(p, include)
         tit = stalactitable(p, include, puz.size)
+        print(mit,tit)
         if mit and tit:
             # Sometimes there are several Os in a row,
             # we want to be a little smarter here not to
@@ -35,8 +37,18 @@ def solve(puz: Puzzle) -> Task:
         if tit:
             mkStalactite(vertices, p)
             continue
-        assert False, (str(p) + " is blocked by ", str(blocks(p, include)))
+        # If it came to this, it means that point `p` is blocked by
+        # a must-include point both from the top and from the bottom
+        # your goal is to implemet an algorithm that will move around
+        # must-include obstacles and touch the target must-omit point
+        # with the wall.
+        tentacles.append(p)
+    if len(tentacles) > 0:
+        assert False, ("Points", str(tentacles), " are blocked.")
     return Task(border=vertices, start=Pt(0,149), obstacles=[], boosters=[])
+
+def mkStalactite(vertices, p):
+    return
 
 def mkStalagmite(vertices, p):
     #print(['vs', vertices, 'point', p])
@@ -86,8 +98,6 @@ def stalagmitable(p: Pt, bs: List[Pt]) -> Optional[int]:
     return p.y
 
 def stalactitable(p: Pt, bs: List[Pt], h: int) -> Optional[int]:
-    # FIXME
-    return None
     for b in bs:
         if b.x == p.x and b.y > p.y:
             return None
