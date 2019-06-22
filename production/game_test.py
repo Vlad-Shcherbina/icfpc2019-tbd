@@ -1,6 +1,8 @@
 from pathlib import Path
-
 from typing import List
+
+import pytest
+
 from production import utils
 from production.golden import validate
 from production.data_formats import Task, GridTask, Action, compose_actions
@@ -59,26 +61,26 @@ def run_for_errors(actions: List[Action]):
 
 
 
-def test_one_bot_game():
-    # simple moves
+def test_simple_moves():
     actions = Action.parse('WWWWWWWWWDDSSSSSSSSSDDDDWWWWWWWWWAASSDDDDDWWAZZSSSSSSSSS')
     run_one_bot_game(actions)
 
-    # turns
+def test_turns():
     actions = Action.parse('DQWWWWWWWWEDDEWDDDDDADQSSSSSSSSEAAAAAEEWWWWWWEDDDESSSS')
     run_one_bot_game(actions)
 
-    # building manips
+def test_building_manips():
     actions = Action.parse('WB(0,1)WWWWWWWDDSSSSSSSADDDDDWWWWWWAAWWDDDDSSSSSSSSA')
     run_one_bot_game(actions)
 
-    # teleport
+def test_teleport():
     actions = Action.parse('DWDDDDDDDWWAAWWDDWWAAAARASSSSAAASSWWWWWWWWDDSSSST(4,7)WWDDDD')
     run_one_bot_game(actions)
 
-    #drill and wheels
+def test_drill_and_wheels():
     actions = Action.parse('WWWFDDLWAQQWWDDSSAWDDQWQQSSSSQAAEEDDDQWWWW')
     run_one_bot_game(actions)
+
 
 def test_clones_game():
     act_str = 'DWADDDDDDDDWAASAAAAEB(1,0)AWWWWAWWWWCDDDDDDDDSSSAZZSFSDWA#CSSSEDDWAASSSSSDDWWW#SDDDDSDDSSSZZSSSAA'.split('#')
@@ -86,39 +88,19 @@ def test_clones_game():
     run_cloned_game(actionlist)
 
 
-def test_errors():
-    # out of bound
-    actions = Action.parse('A')
+@pytest.mark.parametrize('actions',[
+    pytest.param('A', id='out of bound'),
+    pytest.param('WWWWWWWWWWWWWWW', id='out of bound 2'),
+    pytest.param('WWWSSSSSS', id='to obstacle'),
+    pytest.param('WWFF', id='inventory is empty - only one wheel'),
+    pytest.param('DDDDDDDDWC', id='cloning out of spot'),
+    pytest.param('DDDDDDDDWWWWWRSST(1,1)', id='teleporting to wrong place'),
+    pytest.param('WB(1,1)', id='manipulators'),
+    pytest.param('WB(3,1)', id='manipulators 2'),
+])
+def test_error(actions):
+    actions = Action.parse(actions)
     run_for_errors(actions)
-
-    actions = Action.parse('WWWWWWWWWWWWWWW')
-    run_for_errors(actions)
-
-    # to obstacle
-    actions = Action.parse('WWWSSSSSS')
-    run_for_errors(actions)
-
-    # inventory is empty - only one wheel
-    actions = Action.parse('WWFF')
-    run_for_errors(actions)
-
-    # cloning out of spot
-    actions = Action.parse('DDDDDDDDWC')
-    run_for_errors(actions)
-
-    # teleporting to wrong place
-    actions = Action.parse('DDDDDDDDWWWWWRSST(1,1)')
-    run_for_errors(actions)
-
-    # manipulators
-    actions = Action.parse('WB(1,1)')
-    run_for_errors(actions)
-
-    # manipulators
-    actions = Action.parse('WB(3,1)')
-    run_for_errors(actions)
-
-
 
 
 if __name__ == '__main__':
