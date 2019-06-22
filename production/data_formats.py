@@ -19,7 +19,8 @@ class Puzzle:
     teleports: int
     clones: int
     spawnPoints: int
-    ioPoints: Tuple[List[Pt], List[Pt]]
+    include: List[Pt]
+    omit:    List[Pt]
 
     def __str__(self):
         def render(x):
@@ -38,9 +39,9 @@ class Puzzle:
                 out.append('\n')
             return ''.join(out)
         map = ['.' for i in range((self.size) ** 2)]
-        for p in self.ioPoints[0]:
+        for p in self.include:
             map[_o(self.size, p.x, p.y)] = 'I'
-        for p in self.ioPoints[1]:
+        for p in self.omit:
             map[_o(self.size, p.x, p.y)] = 'O'
         return render(map)
 
@@ -59,7 +60,8 @@ class Puzzle:
             teleports=int(s0[8]),
             clones=int(s0[9]),
             spawnPoints=int(s0[10]),
-            ioPoints=(_toListOfPoints(s[1]), _toListOfPoints(s[2]))
+            include=_toListOfPoints(s[1]),
+            omit=_toListOfPoints(s[2])
         )
     @staticmethod
     def o(s, x, y):

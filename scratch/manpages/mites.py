@@ -14,8 +14,8 @@ def solve(puz: Puzzle) -> Task:
                 Pt(puz.size, 0),
                 Pt(puz.size, puz.size),
                 Pt(0, puz.size)]
-    include   = puz.ioPoints[0]
-    omit      = puz.ioPoints[1]
+    include   = puz.include
+    omit      = puz.omit
     tentacles = []
     for p in omit:
         mit = stalagmitable(p, include)
