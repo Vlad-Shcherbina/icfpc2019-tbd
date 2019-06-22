@@ -10,7 +10,7 @@ from production.solvers.interface import *
 from production.game import Game
 
 
-def solve(task: Task) -> Tuple[int, List[Action]]:
+def solve(task: Task) -> Tuple[int, List[Action], dict]:
     task = GridTask(task, with_border=True)
 
     game = Game(task)
@@ -63,7 +63,10 @@ def solve(task: Task) -> Tuple[int, List[Action]]:
 
     score = game.finished()
     logger.info(game.inventory)
-    return score, game.actions
+
+    extra = dict(final_manipulators = len(game.manipulator))
+
+    return score, game.actions, extra
 
 
 class GreedySolver(Solver):
@@ -75,10 +78,11 @@ class GreedySolver(Solver):
 
     def solve(self, task: str) -> SolverResult:
         task = Task.parse(task)
-        expected_score, actions = solve(task)
+        expected_score, actions, extra = solve(task)
         return SolverResult(
             data=compose_actions(actions),
-            expected_score=expected_score)
+            expected_score=expected_score,
+            extra=extra)
 
 
 def main():
