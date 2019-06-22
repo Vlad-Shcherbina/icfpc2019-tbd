@@ -8,9 +8,9 @@ from production.golden import validate
 def test_greedy_on_example():
     s = Path(utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01.desc').read_text()
     task = Task.parse(s)
-    sol = solve(task)
+    expected_score, actions = solve(task)
 
-    res = validate.run(s, compose_actions(sol))
+    res = validate.run(s, compose_actions(actions))
     print(res)
     assert res.time is not None
 

@@ -21,7 +21,7 @@ class Game:
         self.wheels_timer = 0
         self.drill_timer = 0
 
-        self.manipulator = [Pt(1, -1), Pt(1, 0), Pt(1, 1), Pt(0, 0)]
+        self.manipulator = [Pt(0, 0), Pt(1, 0), Pt(1, 1), Pt(1, -1)]
         self.world_manipulator = []
         self.wrapped = set()
         self.unwrapped = {p for p in self.task.grid_iter() if self.grid[p.y][p.x] == '.'}
