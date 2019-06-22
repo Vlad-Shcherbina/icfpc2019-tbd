@@ -199,6 +199,7 @@ def interactive(task_number):
             logging.info(f'Validator score: {er.time}')
 
         solver_worker.put_solution(conn, task_id, result)
+        db.record_this_invocation(conn, status=db.Stopped())
         conn.commit()
 
 
