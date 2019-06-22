@@ -82,6 +82,45 @@ class Display:
         curses.start_color()
 
 
+    def screen_offset(self, size, pos):
+        rows = curses.LINES - 2
+        cols = curses.COLS - 1
+
+        size = Pt(size.x * 2, size.y)
+        pos = Pt(pos.x * 2, size.y - pos.y)
+
+        if size.x <= cols:
+            x = 0
+        elif pos.x < cols/2:
+            x = 0
+        elif size.x - pos.x  < cols/2:
+            x = size.x - cols + 1
+        else:
+            x = int(pos.x - cols/2)
+            
+
+        if size.y <= rows:
+            y = 0
+        elif pos.y < rows/2:
+            y = 0
+        elif size.y - pos.y  < rows/2:
+            y = size.y - rows + 1
+        else:
+            y = int(pos.y - rows/2)
+        # if size.y <= rows:
+        #     y = 0
+        # elif size.y - pos.y  < rows/2:
+        #     y = 0
+        # elif pos.y < rows/2:
+        #     # assert False, int(size.y - rows - 1)
+        #     y = size.y - rows + 1
+        # else:
+        #     y = int(size.y - pos.y - rows/2)
+
+        return Pt(x, y)
+
+
+
     # pass game here in case at some point it becomes purely functional
     def draw(self, game: Game, extra_status = ''):
         stdscr, pad = self.stdscr, self.pad
@@ -115,18 +154,20 @@ class Display:
         for c in game.clone_spawn:
             char(c, 'X', FgColors.Spot)
 
-        for bot in game.bots:
-            for m in bot.world_manipulator:
+        for b in game.bots:
+            for m in b.world_manipulator:
                 char(m, '*', FgColors.Manipulator)
 
-        for bot in game.bots:
-            char(bot.pos, '@', FgColors.InactivePlayer)
+        for b in game.bots:
+            char(b.pos, '@', FgColors.InactivePlayer)
 
-        char(game.bots[self.current].pos, '@', FgColors.Player)
+        bot = game.bots[self.current]
+
+        char(bot.pos, '@', FgColors.Player)
 
 
-
-        pad.refresh(0, 0, 0, 0, curses.LINES - 2, curses.COLS - 1)
+        offset = self.screen_offset(game.size(), bot.pos)
+        pad.refresh(offset.y, offset.x, 0, 0, curses.LINES - 2, curses.COLS - 1)
 
         if self.last_error:
             status_line = self.last_error.ljust(curses.COLS)[:curses.COLS - 1]
@@ -134,7 +175,7 @@ class Display:
             stdscr.addstr(curses.LINES - 1, 0, status_line, colormapping[curses.COLOR_YELLOW | BRIGHT, curses.COLOR_RED])
         else:
             status_line = f'turn={game.turn} ' + \
-                          f'pos=({game.bots[self.current].pos.x}, {game.bots[self.current].pos.y}) ' + \
+                          f'pos=({bot.pos.x}, {bot.pos.y}) ' + \
                           f'unwrapped={len(game.unwrapped)} '
             status_line += ' '.join(f'{b}={game.inventory[b]}' for b in Booster.PICKABLE)
 

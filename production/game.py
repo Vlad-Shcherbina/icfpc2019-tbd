@@ -41,6 +41,10 @@ class Game:
         return 0 <= p.x < self.width and 0 <= p.y < self.height
 
 
+    def size(self) -> Pt:
+        return Pt(self.width, self.height)
+
+
     def recalc_manipulator(self, bot):
         m = (p + bot.pos for p in bot.manipulator)
         bot.world_manipulator = [p for p in m
