@@ -177,42 +177,44 @@ def interactive(task_number):
 
     if score is not None:
         print(f'Score: {score}')
+        submit_replay(conn, task_id, task_data, score, game.actions)
 
-        import logging
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(levelname).1s %(module)10.10s:%(lineno)-4d %(message)s')
 
-        solution_data = compose_actions(game.actions)
-        sr = interface.SolverResult(
-            data=solution_data,
-            expected_score=score)
-        print(sr)
+def submit_replay(conn, task_id, task_data, expected_score, actions):
+    import logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(levelname).1s %(module)10.10s:%(lineno)-4d %(message)s')
 
-        scent = f'manual ({getpass.getuser()})'
+    solution_data = compose_actions(actions)
+    sr = interface.SolverResult(
+        data=solution_data,
+        expected_score=expected_score)
 
-        logging.info('Checking with validator...')
-        er = validate.run(task_data, sr.data)
-        if er.time is None:
-            result = solver_worker.Result(
-                status='CHECK_FAIL', scent=scent, score=None,
-                solution=solution_data,
-                extra=dict(
-                    validator=er.extra,
-                    expected_score=sr.expected_score))
-            logging.info(result)
-        else:
-            result = solver_worker.Result(
-                status='DONE', scent=scent, score=er.time,
-                solution=solution_data,
-                extra=dict(
-                    validator=er.extra,
-                    expected_score=sr.expected_score))
-            logging.info(f'Validator score: {er.time}')
+    scent = f'manual ({getpass.getuser()})'
 
-        solver_worker.put_solution(conn, task_id, result)
-        db.record_this_invocation(conn, status=db.Stopped())
-        conn.commit()
+    logging.info('Checking with validator...')
+    er = validate.run(task_data, sr.data)
+    if er.time is None:
+        result = solver_worker.Result(
+            status='CHECK_FAIL', scent=scent, score=None,
+            solution=solution_data,
+            extra=dict(
+                validator=er.extra,
+                expected_score=sr.expected_score))
+        logging.info(result)
+    else:
+        result = solver_worker.Result(
+            status='DONE', scent=scent, score=er.time,
+            solution=solution_data,
+            extra=dict(
+                validator=er.extra,
+                expected_score=sr.expected_score))
+        logging.info(f'Validator score: {er.time}')
+
+    solver_worker.put_solution(conn, task_id, result)
+    db.record_this_invocation(conn, status=db.Stopped())
+    conn.commit()
 
 
 def main(args=None):
