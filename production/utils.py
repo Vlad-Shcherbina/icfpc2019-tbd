@@ -16,13 +16,19 @@ def get_problem_raw(n):
     elif 221 <= n <= 300:
         part = 'part-3-clones'
     elif n >= 1000:
-        part = 'part-0-mock'
+        return get_mock_problem(n)
     else:
         assert False, n
 
     with ZipFile(project_root() / 'tasks' / f'{part}.zip') as z:
         with z.open(f'prob-{n:03d}.desc', 'r') as fin:
             return fin.read().decode()
+
+
+def get_mock_problem(n):
+    with Path(project_root() / 'tasks' / 'part-0-mock' / f'prob-{n}.desc') as fin:
+        return fin.read_text()
+
 
 
 def testmod():

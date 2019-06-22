@@ -22,7 +22,6 @@ Interactive task runner / replay visualizer.
 Arguments:
 0 - interactive on task 1
 1 - interactive on a given task
-2 - --no-db prevents from writing to db (for mock tasks)
 
 Interactive controls:
 ESC - quit
@@ -165,8 +164,9 @@ class Display:
         curses.endwin()
 
 
-def interactive(task_number, use_db=True):
+def interactive(task_number):
     task_data = utils.get_problem_raw(task_number)
+    use_db = task_number <= 999
 
     if use_db:
         conn = db.get_conn()
@@ -272,8 +272,6 @@ def main(args=None):
         interactive(1)
     elif len(args) == 1:
         interactive(int(args[0]))
-    elif len(args) == 2 and args[1] == '--no-db':
-        interactive(int(args[0]), use_db=False)
     elif len(args) == 2:
         raise NotImplementedError()
     else:
