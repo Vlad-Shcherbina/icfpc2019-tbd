@@ -49,6 +49,36 @@ def test_visibility_small():
     ])
 
 
+def test_visibility_enclosed():
+    check_vis([
+        '. + + + .',
+        '+ . # . +',
+        '+ # o # +',
+        '+ . # . +',
+        '. + + + .',
+    ])
+
+
+def test_visibility_hor():
+    check_vis([
+        '. . . . .',
+        '+ . . . +',
+        '+ # o # +',
+        '+ . . . +',
+        '. . . . .',
+    ])
+
+
+def test_visibility_ver():
+    check_vis([
+        '. + + + .',
+        '. . # . .',
+        '. . o . .',
+        '. . # . .',
+        '. + + + .',
+    ])
+
+
 def check_vis(expected_vis):
     expected_vis = [list(row.replace(' ', '')) for row in expected_vis]
     grid = deepcopy(expected_vis)
@@ -61,7 +91,7 @@ def check_vis(expected_vis):
                 assert eye is None
                 eye = Pt(x=x, y=y)
 
-    vis = render_visibility_grid(grid, Pt(x=1, y=2))
+    vis = render_visibility_grid(grid, eye)
     for row in vis:
         print(' '.join(row))
 
