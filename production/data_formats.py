@@ -1,7 +1,7 @@
 import dataclasses
 import re
 from dataclasses import dataclass
-from typing import ClassVar, Dict
+from typing import ClassVar, Dict, Tuple
 
 from production import utils
 from production.geom import Pt, Poly, List, parse_poly, poly_bb, rasterize_poly
@@ -18,7 +18,7 @@ class Puzzle:
     teleports: int
     clones: int
     spawnPoints: int
-    ioPoints: (List[Pt], List[Pt])
+    ioPoints: Tuple[List[Pt], List[Pt]]
 
     def __str__(self):
         def render(x):
