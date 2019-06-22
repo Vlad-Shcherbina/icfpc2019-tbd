@@ -220,11 +220,12 @@ def interactive(task_number, use_db=True):
 
     if score is not None:
         print(f'Score: {score}')
+        result = validate_replay(task_data, score, game.get_actions())
         if use_db:
-            submit_replay(conn, task_id, task_data, score, game.get_actions())
+            submit_replay(conn, task_id, result)
 
 
-def submit_replay(conn, task_id, task_data, expected_score, actions):
+def validate_replay(task_data, expected_score, actions):
     import logging
     logging.basicConfig(
         level=logging.INFO,
@@ -255,7 +256,10 @@ def submit_replay(conn, task_id, task_data, expected_score, actions):
                 validator=er.extra,
                 expected_score=sr.expected_score))
         logging.info(f'Validator score: {er.time}')
+    return result
 
+
+def submit_replay(conn, task_id, result):
     solver_worker.put_solution(conn, task_id, result)
     db.record_this_invocation(conn, status=db.Stopped())
     conn.commit()
