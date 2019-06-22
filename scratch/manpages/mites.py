@@ -14,7 +14,6 @@ def solve(puz: Puzzle) -> Task:
                 Pt(puz.size, 0),
                 Pt(puz.size, puz.size),
                 Pt(0, puz.size)]
-    print(rasterize_poly(vertices))
     include   = puz.include
     omit      = puz.omit
     tentacles = []
@@ -34,8 +33,7 @@ def solve(puz: Puzzle) -> Task:
         # with the wall.
         tentacles.append(p)
     if len(tentacles) > 0:
-        print(":(")
-        #assert False, ("Points", str(tentacles), " are blocked.")
+        assert False, ("Points", str(tentacles), " are blocked.")
     return Task(border=vertices, start=Pt(0,149), obstacles=[], boosters=[])
 
 def mkStalactite(vertices, p):
