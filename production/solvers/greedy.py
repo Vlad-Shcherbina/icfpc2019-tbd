@@ -11,7 +11,7 @@ from production.game import Game
 
 
 def solve(task: Task) -> Tuple[int, List[Action], dict]:
-    task = GridTask(task, with_border=True)
+    task = GridTask(task)
 
     game = Game(task)
 
@@ -25,8 +25,7 @@ def solve(task: Task) -> Tuple[int, List[Action], dict]:
                 for m in game.manipulator:
                     q = p + m
                     # TODO: visibility and bounds check
-                    if (0 <= q.x < game.width and
-                        0 <= q.y < game.height and
+                    if (game.in_bounds(q) and
                         game.grid[q.y][q.x] == '.' and
                         q in game.unwrapped and
                         visible(game.grid, q, p)):
@@ -38,7 +37,10 @@ def solve(task: Task) -> Tuple[int, List[Action], dict]:
             for p in frontier:
                 for d in Action.DIRS.keys():
                     p2 = p + d
-                    if p2 not in prev and game.grid[p2.y][p2.x] == '.':
+                    if (p2 not in prev and 
+                        game.in_bounds(p2) 
+                        and game.grid[p2.y][p2.x] == '.'):
+
                         prev[p2] = p
                         new_frontier.append(p2)
             frontier = new_frontier

@@ -33,10 +33,14 @@ class Game:
 
 
 
+    def in_bounds(self, p: Pt):
+        return 0 <= p.x < self.width and 0 <= p.y < self.height
+
+
     def update_wrapped(self):
         m = (p + self.pos for p in self.manipulator)
         self.world_manipulator = [p for p in m
-            if 0 < p.x < self.width and 0 < p.y < self.height
+            if self.in_bounds(p)
             and geom.visible(self.grid, self.pos, p)
         ]
         self.wrapped.update(self.world_manipulator)
@@ -51,7 +55,6 @@ class Game:
         if self.unwrapped:
             return None
         return self.turn
-
 
     def apply_action(self, action: Action):
         act = action.s

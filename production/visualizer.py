@@ -156,7 +156,7 @@ def interactive(task_number, use_db=True):
         task_data_db = zlib.decompress(task_data_db).decode()
         assert task_data_db == task_data
 
-    task = GridTask(Task.parse(task_data), with_border=True)
+    task = GridTask(Task.parse(task_data))
     game = Game(task)
     score = None
 

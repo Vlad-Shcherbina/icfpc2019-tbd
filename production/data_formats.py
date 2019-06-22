@@ -70,9 +70,9 @@ class GridTask:
     height: int
 
     @staticmethod
-    def from_problem(n, with_border=False):
+    def from_problem(n):
         s = utils.get_problem_raw(n)
-        return GridTask(Task.parse(s), with_border)
+        return GridTask(Task.parse(s))
 
 
     def mutable_grid(self):
@@ -91,34 +91,24 @@ class GridTask:
                 yield Pt(x, y)
 
 
-    def __init__(self, task: Task, with_border=False):
-        with_border = 1 if with_border else 0
+    def __init__(self, task: Task):
         bb = poly_bb(task.border)
-        self.width = width = bb.x2 - bb.x1 + 2 * with_border
-        self.height = height = bb.y2 - bb.y1 + 2 * with_border
-        offset = Pt(x=bb.x1 - with_border, y=bb.y1 - with_border)
+        self.width = width = bb.x2 - bb.x1
+        self.height = height = bb.y2 - bb.y1
 
-        self.start = task.start - offset
-        self.boosters=[dataclasses.replace(it, pos=it.pos - offset) for it in task.boosters]
+        self.start = task.start
+        # ? should they be copies?
+        self.boosters = task.boosters
 
         # todo C++ grid
 
         grid = [['#'] * width for _ in range(height)]
 
-        if with_border:
-            # border is made of undrillable walls
-            for y in range(height):
-                grid[y][0] = grid[y][width - 1] = 'H'
-
-            for x in range(width):
-                grid[0][x] = grid[height - 1][x] = 'H'
-
-
         def render(poly, c):
             for row in rasterize_poly(poly):
-                for x in range(row.x1 - offset.x, row.x2 - offset.x):
-                    assert grid[row.y - offset.y][x] != c
-                    grid[row.y - offset.y][x] = c
+                for x in range(row.x1, row.x2):
+                    assert grid[row.y][x] != c
+                    grid[row.y][x] = c
 
         render(task.border, '.')
 
