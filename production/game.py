@@ -1,3 +1,5 @@
+from typing import Optional
+
 from production.data_formats import GridTask, Action, Pt
 from production import geom
 
@@ -19,6 +21,7 @@ class Game:
         self.wrapped = set()
         self.unwrapped = {p for p in self.task.grid_iter() if self.grid[p.y][p.x] != '#'}
         self.update_wrapped()
+        self.actions = []
 
 
     def update_wrapped(self):
@@ -35,8 +38,10 @@ class Game:
         return p in self.wrapped
 
 
-    def finished(self):
-        return not self.unwrapped and self.turn
+    def finished(self) -> Optional[int]:
+        if self.unwrapped:
+            return None
+        return self.turn
 
 
     def apply_action(self, action: Action):
@@ -54,6 +59,5 @@ class Game:
             self.update_wrapped()
         else:
             raise InvalidActionException(f'Unknown action {action}')
+        self.actions.append(action)
         self.turn += 1
-
-

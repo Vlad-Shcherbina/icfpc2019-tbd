@@ -3,12 +3,18 @@ import sys
 import contextlib
 from enum import IntEnum
 from collections import defaultdict
+import zlib
+import getpass
 
 import curses
 
 from production import geom, utils
-from production.data_formats import GridTask, Action, Pt
+from production.data_formats import Task, GridTask, Action, Pt, compose_actions
 from production.game import Game, InvalidActionException
+from production import db
+from production import solver_worker
+from production.solvers import interface
+from production.golden import validate
 
 '''
 Interactive task runner / replay visualizer.
@@ -118,7 +124,19 @@ class Display:
 
 
 def interactive(task_number):
-    task = GridTask.from_problem(task_number, with_border=True)
+    task_data = utils.get_problem_raw(task_number)
+
+    conn = db.get_conn()
+    cur = conn.cursor()
+    cur.execute('''
+    SELECT id, data FROM tasks WHERE name = %s
+    ''',
+    [f'prob-{task_number:03d}'])
+    [task_id, task_data_db] = cur.fetchone()
+    task_data_db = zlib.decompress(task_data_db).decode()
+    assert task_data_db == task_data
+
+    task = GridTask(Task.parse(task_data), with_border=True)
     game = Game(task)
     score = None
 
@@ -145,9 +163,43 @@ def interactive(task_number):
 
             score = game.finished()
 
-    if score:
+    if score is not None:
         print(f'Score: {score}')
-        # TODO: submit solution
+
+        import logging
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(levelname).1s %(module)10.10s:%(lineno)-4d %(message)s')
+
+        solution_data = compose_actions(game.actions)
+        sr = interface.SolverResult(
+            data=solution_data,
+            expected_score=score)
+        print(sr)
+
+        scent = f'manual ({getpass.getuser()})'
+
+        logging.info('Checking with validator...')
+        er = validate.run(task_data, sr.data)
+        if er.time is None:
+            result = solver_worker.Result(
+                status='CHECK_FAIL', scent=scent, score=None,
+                solution=solution_data,
+                extra=dict(
+                    validator=er.extra,
+                    expected_score=sr.expected_score))
+            logging.info(result)
+        else:
+            result = solver_worker.Result(
+                status='DONE', scent=scent, score=er.time,
+                solution=solution_data,
+                extra=dict(
+                    validator=er.extra,
+                    expected_score=sr.expected_score))
+            logging.info(f'Validator score: {er.time}')
+
+        solver_worker.put_solution(conn, task_id, result)
+        conn.commit()
 
 
 def main(args=None):
@@ -155,7 +207,7 @@ def main(args=None):
     if len(args) == 0:
         interactive(1)
     elif len(args) == 1:
-        interactive(int(args))
+        interactive(int(args[0]))
     elif len(args) == 2:
         raise NotImplementedError()
     else:
@@ -163,4 +215,9 @@ def main(args=None):
 
 
 if __name__ == '__main__':
+    from importlib.util import find_spec
+    if find_spec('hintcheck'):
+        import hintcheck
+        hintcheck.hintcheck_all_functions()
+
     main()
