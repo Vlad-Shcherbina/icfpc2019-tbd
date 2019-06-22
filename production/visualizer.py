@@ -221,7 +221,7 @@ def interactive(task_number, use_db=True):
     if score is not None:
         print(f'Score: {score}')
         if use_db:
-            submit_replay(conn, task_id, task_data, score, game.actions)
+            submit_replay(conn, task_id, task_data, score, game.get_actions())
 
 
 def submit_replay(conn, task_id, task_data, expected_score, actions):

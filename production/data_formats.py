@@ -202,5 +202,6 @@ Action.DIRS = {
 Action.WSAD2DIR = dict((v.s, k) for k, v in Action.DIRS.items())
 
 
-def compose_actions(lst: List[Action]):
-    return ''.join(map(str, lst))
+def compose_actions(lst: List[List[Action]]):
+    return '#'.join(''.join(map(str, x)) for x in lst)
+

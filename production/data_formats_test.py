@@ -19,15 +19,25 @@ def test_parse_all_problems():
 
 
 def test_compose():
-    actions = [Action.WSAD(c) for c in 'WSAD'] + [
+    actions = [[Action.WSAD(c) for c in 'WSAD'] + [
         Action.wait(),
         Action.turnCW(),
         Action.turnCCW(),
         Action.attach(1, -2),
         Action.wheels(),
         Action.drill(),
-        ]
+        ]]
     assert compose_actions(actions) == 'WSADZEQB(1,-2)FL'
+    actions = [
+        [Action.WSAD(c) for c in 'WSAD'] + [
+            Action.wait(),
+            Action.turnCW(),
+            Action.turnCCW()],
+        [Action.attach(1, -2),
+            Action.wheels(),
+            Action.drill(),
+        ]]
+    assert compose_actions(actions) == 'WSADZEQ#B(1,-2)FL'
 
 
 # def test_grid_with_border():

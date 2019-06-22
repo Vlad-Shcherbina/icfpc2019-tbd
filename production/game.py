@@ -15,6 +15,7 @@ class Bot:
         self.world_manipulator = []
         self.wheels_timer = 0
         self.drill_timer = 0
+        self.actions = []
 
 
 class Game:
@@ -34,7 +35,6 @@ class Game:
         self.wrapped = set()
         self.unwrapped = {p for p in self.task.grid_iter() if self.grid[p.y][p.x] == '.'}
         self.update_wrapped()
-        self.actions = []
 
 
     def in_bounds(self, p: Pt):
@@ -148,9 +148,14 @@ class Game:
 
 
         self.update_wrapped()
-        self.actions.append(action)
+        bot.actions.append(action)
         if end_turn:
             self.turn += 1
         for bot in self.bots:
             bot.drill_timer = max(bot.drill_timer - 1, 0)
             bot.wheels_timer = max(bot.wheels_timer - 1, 0)
+
+
+    def get_actions(self):
+        return [b.actions for b in self.bots]
+
