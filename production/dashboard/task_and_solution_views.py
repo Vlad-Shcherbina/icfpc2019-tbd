@@ -177,10 +177,12 @@ def view_solution(id):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        'SELECT task_id, scent, status, score, extra, invocation_id '
+        'SELECT task_id, scent, status, score, data, extra, invocation_id '
         'FROM solutions WHERE id = %s',
         [id])
-    [task_id, scent, status, energy, extra, inv_id] = cur.fetchone()
+    [task_id, scent, status, score, data, extra, inv_id] = cur.fetchone()
+    if data is not None:
+        data = zlib.decompress(data)
 
     return memoized_render_template_string(VIEW_SOLUTION_TEMPLATE, **locals())
 
@@ -190,7 +192,7 @@ VIEW_SOLUTION_TEMPLATE = '''\
 <h3>Solution info</h3>
 Status: {{ status }} <br>
 Scent: {{ scent }} <br>
-Energy: {{ energy }} <br>
+Score: {{ score }} <br>
 Task: {{ url_for('view_task', id=task_id) | linkify }} <br>
 Produced by {{ url_for('view_invocation', id=inv_id) | linkify }} <br><br>
 Extra:
@@ -198,6 +200,10 @@ Extra:
 
 {% if extra.get('solver', {}).get('tb') %}
 <pre>{{ extra.get('solver', {}).get('tb') }}</pre>
+{% endif %}
+
+{% if data %}
+<a href="{{ data | data_uri }}" download="sol-{{id}}.sol">download solution</a>
 {% endif %}
 
 {% endblock %}

@@ -1,5 +1,6 @@
 import datetime
 import html
+import base64
 
 import flask
 import jinja2
@@ -36,6 +37,12 @@ def get_conn():
 @app.template_filter('linkify')
 def linkify(url):
     return flask.Markup(f'<a href="{html.escape(url)}">{url}</a>')
+
+
+@app.template_filter('data_uri')
+def data_uri(data, mime='text/plain'):
+    assert isinstance(data, bytes), type(data)
+    return f'data:{mime};charset=utf-8;base64,{base64.b64encode(data).decode()}'
 
 
 @app.template_filter('render_datetime')
