@@ -55,6 +55,7 @@ BRIGHT = 0x10000
 
 class FgColors(IntEnum):
     Player = curses.COLOR_RED | BRIGHT
+    InactivePlayer = curses.COLOR_RED
     Booster = curses.COLOR_GREEN | BRIGHT
     Manipulator = curses.COLOR_CYAN | BRIGHT
     Dungeon = curses.COLOR_WHITE
@@ -68,6 +69,7 @@ class Display:
         self.pad = curses.newpad(self.height + 3, self.width * 2 + 3) # same shit about the last character
 
         self.last_error = ''
+        self.current = 0
 
         curses.noecho()
         curses.cbreak()
@@ -103,9 +105,6 @@ class Display:
             for x, c in enumerate(row):
                 char(Pt(x, y), c, FgColors.Dungeon)
 
-        for m in game.world_manipulator:
-            char(m, '*', FgColors.Manipulator)
-
         for b in game.boosters:
             char(b.pos, b.code, FgColors.Booster)
 
@@ -115,7 +114,16 @@ class Display:
         for c in game.clone_spawn:
             char(c, 'X', FgColors.Spot)
 
-        char(game.pos, '@', FgColors.Player)
+        for bot in game.bots:
+            for m in bot.world_manipulator:
+                char(m, '*', FgColors.Manipulator)
+
+        for bot in game.bots:
+            char(bot.pos, '@', FgColors.InactivePlayer)
+
+        char(game.bots[self.current].pos, '@', FgColors.Player)
+
+
 
         pad.refresh(0, 0, 0, 0, curses.LINES - 2, curses.COLS - 1)
 
@@ -124,14 +132,16 @@ class Display:
             self.last_error = ''
             stdscr.addstr(curses.LINES - 1, 0, status_line, colormapping[curses.COLOR_YELLOW | BRIGHT, curses.COLOR_RED])
         else:
-            status_line = f'turn={game.turn} pos=({game.pos.x}, {game.pos.y}) unwrapped={len(game.unwrapped)} '
+            status_line = f'turn={game.turn} ' + \
+                          f'pos=({game.bots[self.current].pos.x}, {game.bots[self.current].pos.y}) ' + \
+                          f'unwrapped={len(game.unwrapped)} '
             status_line += ' '.join(f'{b}={game.inventory[b]}' for b in Booster.PICKABLE)
 
-            if game.wheels_timer:
-                status_line += f' WHEELS({game.wheels_timer})'
+            if game.bots[self.current].wheels_timer:
+                status_line += f' WHEELS({game.bots[self.current].wheels_timer})'
 
-            if game.drill_timer:
-                status_line += f' DRILL({game.drill_timer})'
+            if game.bots[self.current].drill_timer:
+                status_line += f' DRILL({game.bots[self.current].drill_timer})'
 
             if extra_status:
                 status_line += ' '
@@ -198,11 +208,15 @@ def interactive(task_number, use_db=True):
 
             if action:
                 try:
-                    game.apply_action(action)
+                    end_turn = display.current == len(game.bots) - 1
+                    game.apply_action(action, display.current, end_turn)
                 except InvalidActionException as exc:
                     display.draw_error(str(exc))
+                else:
+                    display.current = (display.current + 1) % len(game.bots)
 
             score = game.finished()
+
 
     if score is not None:
         print(f'Score: {score}')

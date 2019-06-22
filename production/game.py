@@ -65,7 +65,7 @@ class Game:
             return None
         return self.turn
 
-    def apply_action(self, action: Action, bot_index: int=0):
+    def apply_action(self, action: Action, bot_index: int=0, end_turn=True):
         act = action.s
         bot = self.bots[bot_index]
 
@@ -149,7 +149,8 @@ class Game:
 
         self.update_wrapped()
         self.actions.append(action)
-        self.turn += 1
+        if end_turn:
+            self.turn += 1
         for bot in self.bots:
             bot.drill_timer = max(bot.drill_timer - 1, 0)
             bot.wheels_timer = max(bot.wheels_timer - 1, 0)
