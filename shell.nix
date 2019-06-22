@@ -6,6 +6,7 @@ stdenv.mkDerivation {
 
   buildInputs = [
     python
+    postgresql
     virtualenv
     pip
     nodejs
