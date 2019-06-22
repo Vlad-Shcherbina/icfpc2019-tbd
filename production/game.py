@@ -11,7 +11,7 @@ class InvalidActionException(Exception):
 class Game:
     def __init__(self, task: GridTask):
         self.task = task
-        self.grid = task.grid
+        self.grid = task.mutable_grid() # because drill
         self.height = task.height
         self.width = task.width
         self.pos = task.start
@@ -55,17 +55,29 @@ class Game:
         act = action.s
 
         if act in 'WSAD':
-            np = self.pos + action.WSAD2DIR[act]
-            if self.grid[np.y][np.x] != '.':
-                raise InvalidActionException(f'Can\'t move into a tile: {self.grid[np.y][np.x]!r}')
-            self.pos = np
-            booster = [b for b in self.boosters if b.pos == np]
-            if booster:
-                [booster] = booster
-                if booster.code in Booster.CODES:
-                    self.inventory.update([booster.code])
-                    self.boosters.remove(booster)
-            self.update_wrapped()
+            for step in range(2 if self.wheels_timer > 1 else 1):
+                np = self.pos + action.WSAD2DIR[act]
+                target = self.grid[np.y][np.x]
+                if target != '.':
+                    if self.drill_timer and target == '#':
+                        # "im not owned!  im not owned!!", the wall continues to insist
+                        # as it slowly shrinks and transforms into a corn cob
+                        self.grid[np.y][np.x] = '.'
+                        self.unwrapped.add(np)
+                    elif step:
+                        # second step, OK to fail
+                        break
+                    else:
+                        raise InvalidActionException(f'Can\'t move into a tile: {target!r}')
+
+                self.pos = np
+                booster = [b for b in self.boosters if b.pos == np]
+                if booster:
+                    [booster] = booster
+                    if booster.code in Booster.CODES:
+                        self.inventory.update([booster.code])
+                        self.boosters.remove(booster)
+                self.update_wrapped()
 
         elif act == 'Q':
             self.manipulator = [p.rotated_ccw() for p in self.manipulator]
@@ -79,10 +91,11 @@ class Game:
             if not self.inventory[act]:
                 raise InvalidActionException('Out of {}s!'.format(Booster.description(act)))
             self.inventory.subtract(act)
+            # TODO: Should timers include current turn?
             if act == 'L':
-                self.drill_timer = 31 # not including current turn?
+                self.drill_timer = 30
             else:
-                self.wheels_timer = 51 # same
+                self.wheels_timer = 50
 
         else:
             raise InvalidActionException(f'Unknown action {action}')

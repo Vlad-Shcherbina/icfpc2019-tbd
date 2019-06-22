@@ -105,7 +105,8 @@ class Display:
             self.last_error = ''
             stdscr.addstr(curses.LINES - 1, 0, status_line, colormapping[curses.COLOR_YELLOW | BRIGHT, curses.COLOR_RED])
         else:
-            status_line = f'{game.turn} ' + ' '.join(f'{b}={game.inventory[b]}' for b in Booster.CODES)
+            status_line = f'turn={game.turn} unwrapped={len(game.unwrapped)} '
+            status_line += ' '.join(f'{b}={game.inventory[b]}' for b in Booster.CODES)
 
             if game.wheels_timer:
                 status_line += f' WHEELS({game.wheels_timer})'
