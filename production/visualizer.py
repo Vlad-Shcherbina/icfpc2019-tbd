@@ -166,7 +166,8 @@ def interactive(task_number, use_db=True):
             if c in '\x1B':
                 break
 
-            action = Action.from_key(c)
+            # todo: parameterized commands B(uild manip) and T(eleport)
+            action = Action.simple_action(c)
 
             if action:
                 try:

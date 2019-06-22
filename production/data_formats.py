@@ -1,4 +1,5 @@
 import dataclasses
+import re
 from dataclasses import dataclass
 from typing import ClassVar
 
@@ -125,6 +126,8 @@ class GridTask:
         self.grid = tuple(''.join(row) for row in grid)
 
 
+param_action_re = re.compile(r'[B|T]\(-?\d+,-?\d+\)') # B(-1,2) or T(3,5)
+
 @dataclass
 class Action:
     s : str
@@ -140,10 +143,17 @@ class Action:
         return Action(c)
 
     @staticmethod
-    def from_key(c: str):
+    def simple_action(c: str):
         'Returns None on failure, for your convenience'
-        if c in 'WSADQEBFL':
+        if c in 'WSADZQEFLRC':
             return Action(c)
+
+    @staticmethod
+    def parameterized_action(c: str):
+        'Returns None on failure'
+        if param_action_re.match(c):
+            return Action(c)
+
 
     @staticmethod
     def wait():
@@ -173,6 +183,18 @@ class Action:
     @staticmethod
     def drill():
         return Action('L')
+
+    @staticmethod
+    def reset():
+        return Action('R')
+
+    @staticmethod
+    def teleport(x, y):
+        return Action(f'B({x},{y})')
+
+    @staticmethod
+    def clone():
+        return Action('C')
 
 Action.DIRS = {
     Pt(0, 1): Action.WSAD('W'),
