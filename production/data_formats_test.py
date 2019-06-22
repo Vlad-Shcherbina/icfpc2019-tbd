@@ -13,7 +13,7 @@ def test_parse_example_task():
 
 
 def test_parse_all_problems():
-    for n in range(1, 150 + 1, 17):
+    for n in range(1, 300 + 1, 17):
         s = utils.get_problem_raw(n)
         t = Task.parse(s)
 

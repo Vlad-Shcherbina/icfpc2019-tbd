@@ -7,13 +7,13 @@ from production.geom import Pt, Poly, List, parse_poly, poly_bb, rasterize_poly
 
 @dataclass
 class Booster:
-    code: str  # 'B', 'F', 'L', 'X'
+    code: str  # char, actually
     pos: Pt
 
     @staticmethod
     def parse(s):
         code = s[0]
-        assert code in list('BFLX')
+        assert code in list('BFLXRC')
         return Booster(code=code, pos=Pt.parse(s[1:]))
 
 
