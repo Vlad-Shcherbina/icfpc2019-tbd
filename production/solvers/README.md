@@ -25,6 +25,6 @@ Start [the dashboard](https://github.com/Vlad-Shcherbina/icfpc2019-tbd/blob/mast
 
 ### Gathering the solutions
 
-`python -m production.make_submission.py`
+`python -m production.make_submission`
 
 It will grab the best solution for every task from the DB, create zip archive and print it's SHA256.
