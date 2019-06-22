@@ -12,11 +12,11 @@ def test_parse_example_task():
     assert t.boosters[0] == Booster(code='B', pos=Pt(0, 1))
 
 
-#def test_parse_and_serialize_all_problems():
-#    for n in range(1, 300 + 1, 17):
-#        s = utils.get_problem_raw(n)
-#        t = Task.parse(s)
-#        assert s == str(t)
+def test_parse_and_serialize_all_problems():
+    for n in range(1, 300 + 1, 17):
+        s = utils.get_problem_raw(n)
+        t = Task.parse(s)
+        assert s == str(t)
 
 
 def test_compose():

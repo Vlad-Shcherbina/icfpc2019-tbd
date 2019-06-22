@@ -113,7 +113,7 @@ class Task:
     obstacles: List[Poly]
     boosters: List[Booster]
 
-    def _str__(self):
+    def __str__(self):
         border = ','.join(map(str, self.border))
         obstacles = []
         for obstacle in self.obstacles:
