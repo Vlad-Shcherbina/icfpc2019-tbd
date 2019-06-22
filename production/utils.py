@@ -1,4 +1,5 @@
 from pathlib import Path
+from zipfile import ZipFile
 
 def project_root() -> Path:
     return (Path(__file__)/'..'/'..').resolve()
@@ -7,8 +8,19 @@ def project_root() -> Path:
 def get_problem_raw(n):
     'Returns the raw contents of the problem description. n is 1-based!'
     # will be extended as we get more tasks
-    fname =  project_root() / 'tasks' / 'part-1-initial' / f'prob-{n:03d}.desc'
-    return fname.read_text()
+
+    if 1 <= n <= 150:
+        part = 'part-1-initial'
+    elif 151 <= n <= 220:
+        part = 'part-2-teleports'
+    elif 221 <= n <= 300:
+        part = 'part-3-clones'
+    else:
+        assert False, n
+
+    with ZipFile(project_root() / 'tasks' / f'{part}.zip') as z:
+        with z.open(f'prob-{n:03d}.desc', 'r') as fin:
+            return fin.read().decode()
 
 
 def testmod():

@@ -13,15 +13,9 @@ def test_parse_example_task():
 
 
 def test_parse_all_problems():
-    with ZipFile(utils.project_root() / 'tasks' / 'part-1-initial.zip') as z:
-        for filename in z.namelist():
-            if filename == 'part-1-legend.txt':
-                continue
-            assert filename.endswith('.desc'), filename
-            print(filename)
-            with z.open(filename, 'r') as fin:
-                s = fin.read().decode()
-                t = Task.parse(s)
+    for n in range(1, 150 + 1, 17):
+        s = utils.get_problem_raw(n)
+        t = Task.parse(s)
 
 
 def test_compose():
