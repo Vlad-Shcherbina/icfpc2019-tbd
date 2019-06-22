@@ -9,6 +9,12 @@ def test_rasterize_poly():
     assert rasterize_poly(poly) == [Row(y=0, x1=0, x2=1)]
 
 
+def test_pt_in_poly():
+    poly = [Pt(0, 0), Pt(1, 0), Pt(1, 1), Pt(0, 1)]
+    assert pt_in_poly(Pt(0, 0), poly)
+    assert not pt_in_poly(Pt(1, 0), poly)
+
+
 def test_visibility():
     # Corner of 11th task
     #   012345678
