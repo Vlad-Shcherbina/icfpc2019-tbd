@@ -2,6 +2,7 @@ import dataclasses
 import re
 from dataclasses import dataclass
 from typing import ClassVar, Dict, Tuple
+from copy import copy
 
 from production import utils
 from production.geom import Pt, Poly, List, parse_poly, poly_bb, rasterize_poly
@@ -46,7 +47,7 @@ class Puzzle:
     @staticmethod
     def parse(x: str) -> 'Puzzle':
         s  = x.split('#')
-        s0 = s[0].split(',') 
+        s0 = s[0].split(',')
         return Puzzle(
             block=int(s0[0]),
             epoch=int(s0[1]),
@@ -173,13 +174,13 @@ class GridTask:
 
 
     def __init__(self, task: Task):
+        # do not do bounding box optimization
         bb = poly_bb(task.border)
-        self.width = width = bb.x2 - bb.x1
-        self.height = height = bb.y2 - bb.y1
+        self.width = width = bb.x2
+        self.height = height = bb.y2
 
         self.start = task.start
-        # ? should they be copies?
-        self.boosters = task.boosters
+        self.boosters = copy(task.boosters)
 
         # todo C++ grid
 

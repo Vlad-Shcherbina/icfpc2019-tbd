@@ -6,8 +6,17 @@ def project_root() -> Path:
 
 
 def get_problem_raw(n):
-    'Returns the raw contents of the problem description. n is 1-based!'
+    '''Returns the raw contents of the problem description.
+    n can be a 1-based integer or string containing one, for official problems
+    or a string that is not an integer for custom problems'''
     # will be extended as we get more tasks
+
+    try:
+        n = int(n)
+    except:
+        # all right, it was a custom problem string
+        with open(project_root() / 'tasks' / f'{n}') as fin:
+            return fin.read_text()
 
     if 1 <= n <= 150:
         part = 'part-1-initial'
@@ -28,7 +37,6 @@ def get_problem_raw(n):
 def get_mock_problem(n):
     with Path(project_root() / 'tasks' / 'part-0-mock' / f'prob-{n}.desc') as fin:
         return fin.read_text()
-
 
 
 def testmod():
