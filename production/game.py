@@ -20,6 +20,8 @@ class Game:
         self.inventory = Counter()
         self.wheels_timer = 0
         self.drill_timer = 0
+        self.teleport_spots = []
+        self.clone_spawn = []
 
         self.manipulator = [Pt(0, 0), Pt(1, 0), Pt(1, 1), Pt(1, -1)]
         self.world_manipulator = []
@@ -87,15 +89,17 @@ class Game:
             self.manipulator = [p.rotated_cw() for p in self.manipulator]
             self.update_wrapped()
 
-        elif act in 'LF':
+        elif act in 'LFR':
             if not self.inventory[act]:
                 raise InvalidActionException('Out of {}s!'.format(Booster.description(act)))
             self.inventory.subtract(act)
-            # TODO: Should timers include current turn?
             if act == 'L':
                 self.drill_timer = 31
-            else:
+            elif act == 'F':
                 self.wheels_timer = 51
+            else:
+                self.teleport_spots.append(self.pos)
+
 
         elif act.startswith('B'):
             if not self.inventory['B']:
@@ -107,6 +111,14 @@ class Game:
             if not any(pt.manhattan_dist(m) == 1 for m in self.manipulator):
                 raise InvalidActionException("manipulator should be adjacent to existing ones")
             self.manipulator.append(pt)
+            self.update_wrapped()
+
+        elif act.startswith('T'):
+            self.inventory.subtract('T')
+            pt = Pt.parse(act[1:])
+            if pt not in self.teleport_spots:
+                raise InvalidActionException("no teleport at destination")
+            self.pos = pt
             self.update_wrapped()
 
         else:

@@ -58,6 +58,7 @@ class FgColors(IntEnum):
     Booster = curses.COLOR_GREEN | BRIGHT
     Manipulator = curses.COLOR_CYAN | BRIGHT
     Dungeon = curses.COLOR_WHITE
+    Spot = curses.COLOR_YELLOW | BRIGHT
 
 
 class Display:
@@ -96,6 +97,12 @@ class Display:
         for b in game.boosters:
             char(b.pos, b.code, FgColors.Booster)
 
+        for t in game.teleport_spots:
+            char(t, '+', FgColors.Spot)
+
+        for t in game.clone_spawn:
+            char(t, 'X', FgColors.Spot)
+
         char(game.pos, '@', FgColors.Player)
 
         pad.refresh(0, 0, 0, 0, curses.LINES - 2, curses.COLS - 1)
@@ -105,7 +112,7 @@ class Display:
             self.last_error = ''
             stdscr.addstr(curses.LINES - 1, 0, status_line, colormapping[curses.COLOR_YELLOW | BRIGHT, curses.COLOR_RED])
         else:
-            status_line = f'turn={game.turn} unwrapped={len(game.unwrapped)} '
+            status_line = f'turn={game.turn} pos=({game.pos.x}, {game.pos.y}) unwrapped={len(game.unwrapped)} '
             status_line += ' '.join(f'{b}={game.inventory[b]}' for b in Booster.CODES)
 
             if game.wheels_timer:
