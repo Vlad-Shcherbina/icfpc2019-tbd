@@ -1,10 +1,79 @@
 import dataclasses
 import re
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import ClassVar, Tuple, Dict
 
 from production import utils
 from production.geom import Pt, Poly, List, parse_poly, poly_bb, rasterize_poly
+
+@dataclass
+class Puzzle:
+    block: int
+    epoch: int
+    size: int
+    vertices: Dict[str, int]
+    extensions: int
+    wheels: int
+    drills: int
+    teleports: int
+    clones: int
+    spawnPoints: int
+    ioPoints: (List[Tuple[int, int]], List[Tuple[int, int]])
+
+    def __str__(self):
+        def render(x):
+            out = []
+            cx = 0
+            cy = self.size-1
+            yoff = (self.size ** 2) - self.size
+            while cy >= 0:
+                while cx < self.size:
+                    off = yoff + cx
+                    cx = cx + 1
+                    out.append(x[off])
+                cy = cy - 1
+                cx = 0
+                yoff = yoff - self.size
+                out.append('\n')
+            return ''.join(out)
+        map = ['.' for i in range((self.size) ** 2)]
+        for p in self.ioPoints[0]:
+            map[_o(self.size, p.x, p.y)] = 'I'
+        for p in self.ioPoints[1]:
+            map[_o(self.size, p.x, p.y)] = 'O'
+        return render(map)
+
+    @staticmethod
+    def parse(x: str) -> 'Puzzle':
+        s  = x.split('#')
+        s0 = s[0].split(',') 
+        return Puzzle(
+            block=int(s0[0]),
+            epoch=int(s0[1]),
+            size=int(s0[2]),
+            vertices={'min': int(s0[3]), 'max': int(s0[4])},
+            extensions=int(s0[5]),
+            wheels=int(s0[6]),
+            drills=int(s0[7]),
+            teleports=int(s0[8]),
+            clones=int(s0[9]),
+            spawnPoints=int(s0[10]),
+            ioPoints=(_toListOfPoints(s[1]), _toListOfPoints(s[2]))
+        )
+
+def _o(s, x, y):
+   return y*s + x
+
+def _toListOfPoints(x: str) -> List[Tuple[int, int]]:
+    y = []
+    xx = x.split('),(')
+    xx[0] = xx[0].strip('(')
+    xx[-1] = xx[-1].strip(')')
+    # yeah, yeah, I know
+    for v in xx:
+        z = v.split(',')
+        y.append(Pt(x=int(z[0]), y=int(z[1])))
+    return y
 
 
 @dataclass
@@ -44,7 +113,7 @@ class Task:
     obstacles: List[Poly]
     boosters: List[Booster]
 
-    def __str__(self):
+    def _str__(self):
         border = ','.join(map(str, self.border))
         obstacles = []
         for obstacle in self.obstacles:
