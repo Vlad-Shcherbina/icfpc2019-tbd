@@ -32,6 +32,9 @@ class Pt:
     def rotated_ccw(self):
         return Pt(x=-self.y, y=self.x)
 
+    def rotated_cw(self):
+        return Pt(x=self.y, y=-self.x)
+
 
 Poly = List[Pt]
 

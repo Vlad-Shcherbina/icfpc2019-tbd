@@ -9,6 +9,19 @@ import curses
 from production import geom, utils
 from production.data_formats import GridTask, Action, Pt
 
+'''
+Interactive task runner / replay visualizer.
+
+Arguments:
+0 - interactive on task 1
+1 - interactive on a given task
+2 - visualize a given task and trace
+
+Interactive controls:
+ESC - quit
+WASD - movement
+QE - turning
+'''
 
 class InvalidActionException(Exception):
     pass
@@ -22,16 +35,30 @@ class Game:
         self.width = task.width
         self.pos = task.start
         self.boosters = task.boosters
+        self.turn = 0
+        self.manipulator = [Pt(1, -1), Pt(1, 0), Pt(1, 1), Pt(0, 0)]
+        self.world_manipulator = []
         self.wrapped = set()
+        self.unwrapped = {p for p in self.task.grid_iter() if self.grid[p.y][p.x] != '#'}
         self.update_wrapped()
 
 
     def update_wrapped(self):
-        self.wrapped.add(self.pos)
+        m = (p + self.pos for p in self.manipulator)
+        self.world_manipulator = [p for p in m
+            if 0 < p.x < self.width and 0 < p.y < self.height
+            and geom.visible(self.grid, self.pos, p)
+        ]
+        self.wrapped.update(self.world_manipulator)
+        self.unwrapped.difference_update(self.world_manipulator)
 
 
-    def is_wrapped(self, y, x):
-        return Pt(x, y) in self.wrapped
+    def is_wrapped(self, p):
+        return p in self.wrapped
+
+
+    def finished(self):
+        return not self.unwrapped and self.turn
 
 
     def apply_action(self, action: Action):
@@ -41,18 +68,15 @@ class Game:
                 raise InvalidActionException(f'Can\'t move into a tile: {self.grid[np.y][np.x]!r}')
             self.pos = np
             self.update_wrapped()
+        elif action.s == 'Q':
+            self.manipulator = [p.rotated_ccw() for p in self.manipulator]
+            self.update_wrapped()
+        elif action.s == 'E':
+            self.manipulator = [p.rotated_cw() for p in self.manipulator]
+            self.update_wrapped()
         else:
             raise InvalidActionException(f'Unknown action {action}')
-
-
-# can be added to foreground color to hackishly make it bright (or bold on some terminals)
-BRIGHT = 0x10000
-
-
-class FgColors(IntEnum):
-    Player = curses.COLOR_RED | BRIGHT
-    Booster = curses.COLOR_GREEN | BRIGHT
-    Dungeon = curses.COLOR_WHITE
+        self.turn += 1
 
 
 class Colormapping(defaultdict):
@@ -71,6 +95,16 @@ class Colormapping(defaultdict):
         return res
 
 colormapping = Colormapping()
+
+
+# can be added to foreground color to hackishly make it bright (or bold on some terminals)
+BRIGHT = 0x10000
+
+class FgColors(IntEnum):
+    Player = curses.COLOR_RED | BRIGHT
+    Booster = curses.COLOR_GREEN | BRIGHT
+    Manipulator = curses.COLOR_CYAN | BRIGHT
+    Dungeon = curses.COLOR_WHITE
 
 
 class Display:
@@ -95,18 +129,21 @@ class Display:
     def draw(self, game: Game, extra_status = ''):
         stdscr, pad = self.stdscr, self.pad
 
-        def char(y, x, char, fgcolor):
-            bg_color = curses.COLOR_BLUE if game.is_wrapped(y, x) else curses.COLOR_BLACK
-            pad.addstr(self.height - y - 1, x * 2, char + ' ', colormapping[fgcolor, bg_color])
+        def char(p, char, fgcolor):
+            bg_color = curses.COLOR_BLUE if game.is_wrapped(p) else curses.COLOR_BLACK
+            pad.addstr(self.height - p.y - 1, p.x * 2, char + ' ', colormapping[fgcolor, bg_color])
 
         for y, row in enumerate(game.grid):
             for x, c in enumerate(row):
-                char(y, x, c, FgColors.Dungeon)
+                char(Pt(x, y), c, FgColors.Dungeon)
+
+        for m in game.world_manipulator:
+            char(m, '*', FgColors.Manipulator)
 
         for b in game.boosters:
-            char(b.pos.y, b.pos.x, b.code, FgColors.Booster)
+            char(b.pos, b.code, FgColors.Booster)
 
-        char(game.pos.y, game.pos.x, '@', FgColors.Player)
+        char(game.pos, '@', FgColors.Player)
 
         pad.refresh(0, 0, 0, 0, curses.LINES - 2, curses.COLS - 1)
 
@@ -115,7 +152,7 @@ class Display:
             self.last_error = ''
             stdscr.addstr(curses.LINES - 1, 0, status_line, colormapping[curses.COLOR_YELLOW | BRIGHT, curses.COLOR_RED])
         else:
-            status_line = ''
+            status_line = f'{game.world_manipulator} '
             status_line += extra_status
             # LMAO: "It looks like simply writing the last character of a window is impossible with curses, for historical reasons."
             status_line = status_line.ljust(curses.COLS)[:curses.COLS - 1]
@@ -135,13 +172,14 @@ class Display:
         curses.endwin()
 
 
-def interactive():
-    task = GridTask.from_problem(3, with_border=True)
+def interactive(task_number):
+    task = GridTask.from_problem(task_number, with_border=True)
     game = Game(task)
+    score = None
 
     with contextlib.closing(Display(game)) as display:
         code, c = '', ''
-        while True:
+        while not score:
             display.draw(game, f'lastchar = {code} {c!r}')
 
             code = display.stdscr.getch()
@@ -149,10 +187,10 @@ def interactive():
 
             c = chr(code).upper()
 
-            if c in '\x1BQ':
+            if c in '\x1B':
                 break
-            elif c in 'WSAD':
-                action = Action.WSAD(c)
+
+            action = Action.from_key(c)
 
             if action:
                 try:
@@ -160,10 +198,24 @@ def interactive():
                 except InvalidActionException as exc:
                     display.draw_error(str(exc))
 
+            score = game.finished()
+
+    if score:
+        print(f'Score: {score}')
+        # TODO: submit solution
 
 
-
+def main(args=None):
+    args = sys.argv[1:] if args is None else args
+    if len(args) == 0:
+        interactive(1)
+    elif len(args) == 1:
+        interactive(int(args))
+    elif len(args) == 2:
+        raise NotImplementedError()
+    else:
+        assert False
 
 
 if __name__ == '__main__':
-    interactive()
+    main()

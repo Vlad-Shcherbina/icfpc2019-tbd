@@ -63,7 +63,15 @@ class GridTask:
 
 
     def grid_as_text(self):
+        # TODO: add boosters and start
         return '\n'.join(' '.join(row) for row in self.grid)
+
+
+    def grid_iter(self):
+        'return indices in the grid'
+        for y in range(self.height):
+            for x in range(self.width):
+                yield Pt(x, y)
 
 
     def __init__(self, task: Task, with_border=False):
@@ -111,6 +119,11 @@ class Action:
         assert c in 'WASD'
         return Action(c)
 
+    @staticmethod
+    def from_key(c: str):
+        'Returns None on failure, for your convenience'
+        if c in 'WSADQEFL':
+            return Action(c)
 
     @staticmethod
     def wait():
