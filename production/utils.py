@@ -15,6 +15,8 @@ def get_problem_raw(n):
         part = 'part-2-teleports'
     elif 221 <= n <= 300:
         part = 'part-3-clones'
+    elif n >= 1000:
+        part = 'part-0-mock'
     else:
         assert False, n
 

@@ -135,18 +135,19 @@ class Display:
         curses.endwin()
 
 
-def interactive(task_number):
+def interactive(task_number, use_db=True):
     task_data = utils.get_problem_raw(task_number)
 
-    conn = db.get_conn()
-    cur = conn.cursor()
-    cur.execute('''
-    SELECT id, data FROM tasks WHERE name = %s
-    ''',
-    [f'prob-{task_number:03d}'])
-    [task_id, task_data_db] = cur.fetchone()
-    task_data_db = zlib.decompress(task_data_db).decode()
-    assert task_data_db == task_data
+    if use_db:
+        conn = db.get_conn()
+        cur = conn.cursor()
+        cur.execute('''
+        SELECT id, data FROM tasks WHERE name = %s
+        ''',
+        [f'prob-{task_number:03d}'])
+        [task_id, task_data_db] = cur.fetchone()
+        task_data_db = zlib.decompress(task_data_db).decode()
+        assert task_data_db == task_data
 
     task = GridTask(Task.parse(task_data), with_border=True)
     game = Game(task)
@@ -177,7 +178,8 @@ def interactive(task_number):
 
     if score is not None:
         print(f'Score: {score}')
-        submit_replay(conn, task_id, task_data, score, game.actions)
+        if use_db:
+            submit_replay(conn, task_id, task_data, score, game.actions)
 
 
 def submit_replay(conn, task_id, task_data, expected_score, actions):
@@ -223,6 +225,8 @@ def main(args=None):
         interactive(1)
     elif len(args) == 1:
         interactive(int(args[0]))
+    elif len(args) == 2 and args[1] == '--no-db':
+        interactive(int(args[0]), use_db=False)
     elif len(args) == 2:
         raise NotImplementedError()
     else:
