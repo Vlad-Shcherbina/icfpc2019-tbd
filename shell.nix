@@ -11,6 +11,8 @@ stdenv.mkDerivation {
     pip
     nodejs
     chromium
+    gcc8
+    boost
   ];
 
   shellHook = ''

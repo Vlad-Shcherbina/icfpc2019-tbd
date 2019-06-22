@@ -15,6 +15,9 @@ class Booster:
     PICKABLE: ClassVar[str] = 'BFLRC'
     CODES: ClassVar[str] = PICKABLE + 'X'
 
+    def __str__(self):
+        return f'{self.code}{self.pos}'
+
     @staticmethod
     def parse(s):
         code = s[0]
@@ -40,6 +43,15 @@ class Task:
     start: Pt
     obstacles: List[Poly]
     boosters: List[Booster]
+
+    def __str__(self):
+        border = ','.join(map(str, self.border))
+        obstacles = []
+        for obstacle in self.obstacles:
+            obstacles.append(','.join(map(str, obstacle)))
+        obstacles = ';'.join(obstacles)
+        boosters = ';'.join(map(str, self.boosters))
+        return f'{border}#{self.start}#{obstacles}#{boosters}'
 
     @staticmethod
     def parse(s: str) -> 'Task':

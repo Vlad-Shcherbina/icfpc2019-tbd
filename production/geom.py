@@ -17,6 +17,9 @@ class Pt:
     x: int
     y: int
 
+    def __str__(self):
+        return f'({self.x},{self.y})'
+
     @staticmethod
     def parse(s):
         m = re.match(r'\((-?\d+),(-?\d+)\)$', s)
