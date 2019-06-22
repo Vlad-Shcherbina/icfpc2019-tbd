@@ -5,6 +5,7 @@ import json
 import zlib
 from typing import Optional, Any, List, Dict
 from dataclasses import dataclass
+import queue
 import multiprocessing
 import multiprocessing.queues
 import argparse
@@ -191,8 +192,8 @@ def main():
     # task_ids.sort(reverse=True)
 
     num_workers = args.jobs
-    output_queue = multiprocessing.SimpleQueue()
-    input_queues = [multiprocessing.SimpleQueue() for _ in range(num_workers)]
+    output_queue = multiprocessing.Queue()
+    input_queues = [multiprocessing.Queue() for _ in range(num_workers)]
     workers = []
     for i, iq in enumerate(input_queues):
         log_path = utils.project_root() / 'outputs' / f'solver_worker_{i:02}.log'
@@ -228,8 +229,16 @@ def main():
         else:
             if len(available_workers) == num_workers:
                 break
-            # TODO: keep invocation alive
-            output_entry = output_queue.get()
+
+            while True:
+                db.record_this_invocation(conn, status=db.KeepRunning(40))
+                conn.commit()
+                try:
+                    output_entry = output_queue.get(timeout=20)
+                    break
+                except queue.Empty:
+                    logging.info('waiting...')
+
             assert output_entry.worker_index not in available_workers
             available_workers.add(output_entry.worker_index)
             logging.info(
@@ -241,6 +250,9 @@ def main():
             else:
                 put_solution(conn, output_entry.task_id, output_entry.result)
                 conn.commit()
+
+    db.record_this_invocation(conn, status=db.Stopped())
+    conn.commit()
 
     logging.info('All done, joining workers...')
     for iq in input_queues:
@@ -258,6 +270,6 @@ if __name__ == '__main__':
     from importlib.util import find_spec
     if find_spec('hintcheck'):
         import hintcheck
-        hintcheck.hintcheck_all_functions()
+        # hintcheck.hintcheck_all_functions()
 
     main()
