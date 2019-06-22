@@ -35,7 +35,7 @@ def solve(puz: Puzzle) -> Task:
         if tit:
             mkStalactite(vertices, p)
             continue
-        #assert False, (str(x) + " is blocked by " str(blocks(p, include)))
+        assert False, (str(p) + " is blocked by ", str(blocks(p, include)))
     return Task(border=vertices, start=Pt(0,149), obstacles=[], boosters=[])
 
 def mkStalagmite(vertices, p):
