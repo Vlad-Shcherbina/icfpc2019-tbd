@@ -20,7 +20,6 @@ def solve(puz: Puzzle) -> Task:
     for p in omit:
         mit = stalagmitable(p, include)
         tit = stalactitable(p, include, puz.size)
-        print(mit,tit)
         if mit and tit:
             # Sometimes there are several Os in a row,
             # we want to be a little smarter here not to
