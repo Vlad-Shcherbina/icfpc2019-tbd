@@ -266,12 +266,14 @@ def interactive(task_number):
     if score is not None:
         print(f'Score: {score}')
         result = validate_replay(task_data, score, game.get_actions())
+        print(result)
         if use_db:
             submit_replay(conn, task_id, result)
         else:
-            with Path(utils.project_root() / 'outputs' / 'mock_solutions' / f'prob-{task_number}.sol') as fin:
-                return fin.write_text(result.solution)
-
+            mock_solutions = utils.project_root() / 'outputs' / 'mock_solutions'
+            mock_solutions.mkdir(parents=True, exist_ok=True)
+            with mock_solutions / f'prob-{task_number}.sol' as fin:
+                fin.write_text(result.solution)
 
 
 def validate_replay(task_data, expected_score, actions):
