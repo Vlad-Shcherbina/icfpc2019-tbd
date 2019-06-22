@@ -121,6 +121,16 @@ def pt_in_poly(pt: Pt, poly: Poly) -> bool:
             return True
     return False
 
+def nearest_vertex(pt: Pt, poly: Poly) -> Pt:
+    x = 0
+    nearest = pt
+    for vertex in poly:
+        dist = pt.manhattan_dist(vertex)
+        if dist < x or nearest == pt:
+            x = dist
+            nearest = vertex
+    return nearest
+
 
 def visible(grid, p1: Pt, p2: Pt):
     dist = (p2 - p1)
