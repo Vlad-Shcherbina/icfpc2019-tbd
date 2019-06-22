@@ -61,9 +61,10 @@ class Puzzle:
             spawnPoints=int(s0[10]),
             ioPoints=(_toListOfPoints(s[1]), _toListOfPoints(s[2]))
         )
+    @staticmethod
+    def o(s, x, y):
+       return y*s + x
 
-def _o(s, x, y):
-   return y*s + x
 
 def _toListOfPoints(x: str) -> List[Pt]:
     y = []
