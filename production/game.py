@@ -55,7 +55,7 @@ class Game:
         act = action.s
 
         if act in 'WSAD':
-            for step in range(2 if self.wheels_timer > 1 else 1):
+            for step in range(2 if self.wheels_timer else 1):
                 np = self.pos + action.WSAD2DIR[act]
                 target = self.grid[np.y][np.x]
                 if target != '.':
@@ -93,9 +93,9 @@ class Game:
             self.inventory.subtract(act)
             # TODO: Should timers include current turn?
             if act == 'L':
-                self.drill_timer = 30
+                self.drill_timer = 31
             else:
-                self.wheels_timer = 50
+                self.wheels_timer = 51
 
         elif act.startswith('B'):
             if not self.inventory['B']:
