@@ -65,7 +65,9 @@ class Game:
             return None
         return self.turn
 
-    def apply_action(self, action: Action, bot_index: int=0, end_turn=True):
+    def apply_action(self, action: Action, bot_index: int=0):
+        # you should always call the zero's bot action explicitely,
+        # even if it's Z, since he counts turns
         act = action.s
         bot = self.bots[bot_index]
 
@@ -95,6 +97,7 @@ class Game:
                     if booster.code in Booster.CODES:
                         self.inventory.update([booster.code])
                         self.boosters.remove(booster)
+                self.update_wrapped()
 
         elif act == 'Z':
             pass
@@ -114,7 +117,7 @@ class Game:
             elif act == 'F':
                 bot.wheels_timer = 51
             else:
-                self.teleport_spots.append(self.pos)
+                self.teleport_spots.append(bot.pos)
 
 
         elif act.startswith('B'):
@@ -152,7 +155,7 @@ class Game:
 
         self.update_wrapped()
         bot.actions.append(action)
-        if end_turn:
+        if bot_index == 0:
             self.turn += 1
         for bot in self.bots:
             bot.drill_timer = max(bot.drill_timer - 1, 0)

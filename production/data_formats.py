@@ -204,6 +204,25 @@ class Action:
     def clone():
         return Action('C')
 
+
+    @staticmethod
+    def parse(s: str) -> List['Action']:
+        actions = []
+        i = 0
+        while i < len(s):
+            if s[i] in Action.SIMPLE:
+                actions.append(Action.simple_action(s[i]))
+                i += 1
+            elif s[i] in Action.PARAM:
+                m = param_action_re.match(s, i)
+                assert m, s[i:]
+                actions.append(Action.parameterized_action(m[0]))
+                i = m.end()
+            else:
+                assert False, s[i:]
+        return actions
+
+
 Action.DIRS = {
     Pt(0, 1): Action.WSAD('W'),
     Pt(0, -1): Action.WSAD('S'),

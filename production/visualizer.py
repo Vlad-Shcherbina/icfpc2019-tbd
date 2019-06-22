@@ -5,6 +5,7 @@ from enum import IntEnum
 from collections import defaultdict
 import zlib
 import getpass
+from pathlib import Path
 
 import curses
 
@@ -185,6 +186,7 @@ def interactive(task_number):
 
     with contextlib.closing(Display(game)) as display:
         code, c = '', ''
+
         while not score:
             display.draw(game, f'lastchar = {code} {c!r}')
 
@@ -207,14 +209,15 @@ def interactive(task_number):
                     c = c + chr(code).upper()
                 action = Action.parameterized_action(c)
 
+            if display.current == 0:
+                botcount = len(game.bots)
             if action:
                 try:
-                    end_turn = display.current == len(game.bots) - 1
-                    game.apply_action(action, display.current, end_turn)
+                    game.apply_action(action, display.current)
                 except InvalidActionException as exc:
                     display.draw_error(str(exc))
                 else:
-                    display.current = (display.current + 1) % len(game.bots)
+                    display.current = (display.current + 1) % botcount
 
             score = game.finished()
 
@@ -224,6 +227,10 @@ def interactive(task_number):
         result = validate_replay(task_data, score, game.get_actions())
         if use_db:
             submit_replay(conn, task_id, result)
+        else:
+            with Path(utils.project_root() / 'outputs' / 'mock_solutions' / f'prob-{task_number}.sol') as fin:
+                return fin.write_text(result.solution)
+
 
 
 def validate_replay(task_data, expected_score, actions):
