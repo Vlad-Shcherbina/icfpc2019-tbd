@@ -9,7 +9,7 @@ import getpass
 import curses
 
 from production import geom, utils
-from production.data_formats import Task, GridTask, Action, Pt, compose_actions
+from production.data_formats import Task, GridTask, Action, Pt, Booster, compose_actions
 from production.game import Game, InvalidActionException
 from production import db
 from production import solver_worker
@@ -103,8 +103,10 @@ class Display:
             self.last_error = ''
             stdscr.addstr(curses.LINES - 1, 0, status_line, colormapping[curses.COLOR_YELLOW | BRIGHT, curses.COLOR_RED])
         else:
-            status_line = f'{game.world_manipulator} '
-            status_line += extra_status
+            status_line = f'{game.turn} ' + ' '.join(f'{b}={game.inventory[b]}' for b in Booster.CODES)
+            if extra_status:
+                status_line += ' '
+                status_line += extra_status
             # LMAO: "It looks like simply writing the last character of a window is impossible with curses, for historical reasons."
             status_line = status_line.ljust(curses.COLS)[:curses.COLS - 1]
             stdscr.addstr(curses.LINES - 1, 0, status_line, colormapping[curses.COLOR_YELLOW | BRIGHT, curses.COLOR_BLUE])

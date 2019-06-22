@@ -1,7 +1,8 @@
 from typing import Optional
-
-from production.data_formats import GridTask, Action, Pt
+from collections import Counter
+from production.data_formats import GridTask, Action, Pt, Booster
 from production import geom
+
 
 class InvalidActionException(Exception):
     pass
@@ -16,12 +17,16 @@ class Game:
         self.pos = task.start
         self.boosters = task.boosters
         self.turn = 0
+        self.inventory = Counter()
+
         self.manipulator = [Pt(1, -1), Pt(1, 0), Pt(1, 1), Pt(0, 0)]
         self.world_manipulator = []
         self.wrapped = set()
         self.unwrapped = {p for p in self.task.grid_iter() if self.grid[p.y][p.x] != '#'}
         self.update_wrapped()
         self.actions = []
+
+
 
 
     def update_wrapped(self):
@@ -50,6 +55,12 @@ class Game:
             if self.grid[np.y][np.x] != '.':
                 raise InvalidActionException(f'Can\'t move into a tile: {self.grid[np.y][np.x]!r}')
             self.pos = np
+            booster = [b for b in self.boosters if b.pos == np]
+            if booster:
+                [booster] = booster
+                if booster.code in Booster.CODES:
+                    self.inventory.update([booster.code])
+                    self.boosters.remove(booster)
             self.update_wrapped()
         elif action.s == 'Q':
             self.manipulator = [p.rotated_ccw() for p in self.manipulator]

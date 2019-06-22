@@ -1,5 +1,6 @@
 import dataclasses
 from dataclasses import dataclass
+from typing import ClassVar
 
 from production import utils
 from production.geom import Pt, Poly, List, parse_poly, poly_bb, rasterize_poly
@@ -9,6 +10,8 @@ from production.geom import Pt, Poly, List, parse_poly, poly_bb, rasterize_poly
 class Booster:
     code: str  # char, actually
     pos: Pt
+
+    CODES: ClassVar[str] = 'BFL' # 'X' is a black sheep
 
     @staticmethod
     def parse(s):
@@ -122,7 +125,7 @@ class Action:
     @staticmethod
     def from_key(c: str):
         'Returns None on failure, for your convenience'
-        if c in 'WSADQEFL':
+        if c in 'WSADQEBFL':
             return Action(c)
 
     @staticmethod
