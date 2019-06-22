@@ -111,6 +111,14 @@ def rasterize_poly(poly: Poly) -> List[Row]:
     return result
 
 
+def pt_in_poly(pt: Pt, poly: Poly) -> bool:
+    # TODO: could be faster
+    for row in rasterize_poly(poly):
+        if pt.y == row.y and row.x1 <= pt.x < row.x2:
+            return True
+    return False
+
+
 def visible(grid, p1: Pt, p2: Pt):
     dist = (p2 - p1)
     divider = (abs(dist.x) + abs(dist.y)) * 2 + 1
