@@ -65,7 +65,7 @@ class Display:
     def __init__(self, game):
         self.width, self.height = game.width, game.height
         self.stdscr = curses.initscr()
-        self.pad = curses.newpad(self.height, self.width * 2 + 1) # same shit about the last character
+        self.pad = curses.newpad(self.height + 3, self.width * 2 + 3) # same shit about the last character
 
         self.last_error = ''
 
@@ -83,10 +83,22 @@ class Display:
     def draw(self, game: Game, extra_status = ''):
         stdscr, pad = self.stdscr, self.pad
 
-        def char(p, char, fgcolor):
-            bg_color = curses.COLOR_BLUE if game.is_wrapped(p) else curses.COLOR_BLACK
-            pad.addstr(self.height - p.y - 1, p.x * 2, char + ' ', colormapping[fgcolor, bg_color])
 
+        def char(p, char, fgcolor):
+            offset = Pt(1, 1)
+            bg_color = curses.COLOR_BLUE if game.is_wrapped(p) else curses.COLOR_BLACK
+            p = p + offset
+            pad.addstr(self.height - p.y + 1, p.x * 2, char + ' ', colormapping[fgcolor, bg_color])
+
+        #borders
+        #for some reason the left border is not shown
+        for x in range(game.width + 2):
+            char(Pt(x - 1, -1), 'H', FgColors.Dungeon)
+            char(Pt(x - 1, game.height), 'H', FgColors.Dungeon)
+        for y in range(game.height + 2):
+            char(Pt(-1, y - 1), 'H', FgColors.Dungeon)
+            char(Pt(game.width, y - 1), 'H', FgColors.Dungeon)
+            
         for y, row in enumerate(game.grid):
             for x, c in enumerate(row):
                 char(Pt(x, y), c, FgColors.Dungeon)
@@ -100,8 +112,8 @@ class Display:
         for t in game.teleport_spots:
             char(t, '+', FgColors.Spot)
 
-        for t in game.clone_spawn:
-            char(t, 'X', FgColors.Spot)
+        for c in game.clone_spawn:
+            char(c, 'X', FgColors.Spot)
 
         char(game.pos, '@', FgColors.Player)
 
@@ -113,7 +125,7 @@ class Display:
             stdscr.addstr(curses.LINES - 1, 0, status_line, colormapping[curses.COLOR_YELLOW | BRIGHT, curses.COLOR_RED])
         else:
             status_line = f'turn={game.turn} pos=({game.pos.x}, {game.pos.y}) unwrapped={len(game.unwrapped)} '
-            status_line += ' '.join(f'{b}={game.inventory[b]}' for b in Booster.CODES)
+            status_line += ' '.join(f'{b}={game.inventory[b]}' for b in Booster.PICKABLE)
 
             if game.wheels_timer:
                 status_line += f' WHEELS({game.wheels_timer})'

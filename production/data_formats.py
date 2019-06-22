@@ -12,8 +12,8 @@ class Booster:
     code: str  # char, actually
     pos: Pt
 
-    # todo: remove X or somehow deal with it being not pickable
-    CODES: ClassVar[str] = 'BFLRCX'
+    PICKABLE: ClassVar[str] = 'BFLRC'
+    CODES: ClassVar[str] = PICKABLE + 'X'
 
     @staticmethod
     def parse(s):
@@ -29,7 +29,7 @@ class Booster:
             'B': 'extension',
             'F': 'wheel',
             'L': 'drill',
-            'C': 'clones',
+            'C': 'clone',
             'R': 'teleport'
         }[s]
 

@@ -17,12 +17,12 @@ def solve(task: Task) -> Tuple[int, List[Action], dict]:
 
     while not game.finished():
         # logging.info(f'{len(game.unwrapped)} unwrapped')
-        prev = {game.pos: None}
-        frontier = [game.pos]
+        prev = {game.bots[0].pos: None}
+        frontier = [game.bots[0].pos]
         while frontier:
             dst = None
             for p in frontier:
-                for m in game.manipulator:
+                for m in game.bots[0].manipulator:
                     q = p + m
                     # TODO: visibility and bounds check
                     if (game.in_bounds(q) and
@@ -46,11 +46,11 @@ def solve(task: Task) -> Tuple[int, List[Action], dict]:
             frontier = new_frontier
 
         assert dst is not None
-        assert dst != game.pos
+        assert dst != game.bots[0].pos
 
         path = []
         p = dst
-        while p != game.pos:
+        while p != game.bots[0].pos:
             d = p - prev[p]
             path.append(Action.DIRS[d])
             p = prev[p]
@@ -61,12 +61,12 @@ def solve(task: Task) -> Tuple[int, List[Action], dict]:
 
         if game.inventory['B'] > 0:
             logger.info('attach extension')
-            game.apply_action(Action.attach(1, len(game.manipulator) - 2))
+            game.apply_action(Action.attach(1, len(game.bots[0].manipulator) - 2))
 
     score = game.finished()
     logger.info(game.inventory)
 
-    extra = dict(final_manipulators = len(game.manipulator))
+    extra = dict(final_manipulators = len(game.bots[0].manipulator))
 
     return score, game.actions, extra
 
