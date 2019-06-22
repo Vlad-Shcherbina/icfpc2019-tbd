@@ -22,13 +22,14 @@ Interactive task runner / replay visualizer.
 Arguments:
 0 - interactive on task 1
 1 - interactive on a given task
-2 - visualize a given task and trace
+2 - --no-db prevents from writing to db (for mock tasks)
 
 Interactive controls:
 ESC - quit
 WASD - movement
 QE - turning
-FLB - boosters
+Z - waiting
+FLBTRC - boosters
 Space or Anykey - dismiss error message
 '''
 

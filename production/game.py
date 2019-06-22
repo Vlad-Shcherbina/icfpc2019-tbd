@@ -96,6 +96,9 @@ class Game:
                         self.inventory.update([booster.code])
                         self.boosters.remove(booster)
 
+        elif act == 'Z':
+            pass
+
         elif act == 'Q':
             bot.manipulator = [p.rotated_ccw() for p in bot.manipulator]
 
