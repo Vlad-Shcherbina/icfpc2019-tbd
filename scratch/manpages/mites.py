@@ -1,6 +1,6 @@
 import sys
 
-from production.data_formats import Puzzle, Task
+from production.data_formats import Puzzle, Task, Booster
 from production.geom import Pt, rasterize_poly
 from typing import List, Optional
 
@@ -16,24 +16,32 @@ def solve(puz: Puzzle) -> Task:
                 Pt(0, puz.size)]
     include   = puz.include
     omit      = puz.omit
+    omit.sort(key=lambda p: p.x)
     tentacles = []
     for p in omit:
         mit = stalagmitable(p, include)
         tit = stalactitable(p, include, puz.size)
-        if mit:
+        if mit is not None:
             mkStalagmite(vertices, p)
             continue
-        if tit:
-            mkStalactite(vertices, p)
-            continue
+        #if tit:
+        #    mkStalactite(vertices, p)
+        #    continue
         # If it came to this, it means that point `p` is blocked by
         # a must-include point both from the top and from the bottom
         # your goal is to implemet an algorithm that will move around
         # must-include obstacles and touch the target must-omit point
         # with the wall.
         tentacles.append(p)
+    foosters = list(map(lambda x: Booster('B', x), tentacles))
+    foosters.extend(list(map(lambda x: Booster('R', x), include)))
+    return Task(border=vertices, start=Pt(0,149), obstacles=[], boosters=foosters)
     if len(tentacles) > 0:
-        assert False, ("Points", str(tentacles), " are blocked.")
+        assert False, (
+            "Points", str(tentacles),
+            "are blocked. Closest we can get is",
+            list(map(lambda x: min(vertices, key=x.manhattan_dist), tentacles))
+        )
     return Task(border=vertices, start=Pt(0,149), obstacles=[], boosters=[])
 
 def mkStalactite(vertices, p):
