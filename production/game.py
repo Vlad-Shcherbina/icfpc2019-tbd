@@ -97,6 +97,18 @@ class Game:
             else:
                 self.wheels_timer = 50
 
+        elif act.startswith('B'):
+            if not self.inventory['B']:
+                raise InvalidActionException('Out of {}s!'.format(Booster.description('B')))
+            self.inventory.subtract('B')
+            pt = Pt.parse(act[1:])
+            if pt in self.manipulator:
+                raise InvalidActionException("manipulator already there")
+            if not any(pt.manhattan_dist(m) == 1 for m in self.manipulator):
+                raise InvalidActionException("manipulator should be adjacent to existing ones")
+            self.manipulator.append(pt)
+            self.update_wrapped()
+
         else:
             raise InvalidActionException(f'Unknown action {action}')
 

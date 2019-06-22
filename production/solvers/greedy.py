@@ -1,14 +1,14 @@
 import logging
 logger = logging.getLogger(__name__)
 from pathlib import Path
-
 from typing import List, Tuple
 
 from production import utils
 from production.data_formats import *
-from production.geom import poly_bb, rasterize_poly
+from production.geom import poly_bb, rasterize_poly, visible
 from production.solvers.interface import *
 from production.game import Game
+
 
 def solve(task: Task) -> Tuple[int, List[Action]]:
     task = GridTask(task, with_border=True)
@@ -16,6 +16,7 @@ def solve(task: Task) -> Tuple[int, List[Action]]:
     game = Game(task)
 
     while not game.finished():
+        # logging.info(f'{len(game.unwrapped)} unwrapped')
         prev = {game.pos: None}
         frontier = [game.pos]
         while frontier:
@@ -24,7 +25,11 @@ def solve(task: Task) -> Tuple[int, List[Action]]:
                 for m in game.manipulator:
                     q = p + m
                     # TODO: visibility and bounds check
-                    if game.grid[q.y][q.x] == '.' and q in game.unwrapped:
+                    if (0 <= q.x < game.width and
+                        0 <= q.y < game.height and
+                        game.grid[q.y][q.x] == '.' and
+                        q in game.unwrapped and
+                        visible(game.grid, q, p)):
                         dst = p
             if dst is not None:
                 break
@@ -39,6 +44,7 @@ def solve(task: Task) -> Tuple[int, List[Action]]:
             frontier = new_frontier
 
         assert dst is not None
+        assert dst != game.pos
 
         path = []
         p = dst
@@ -51,7 +57,12 @@ def solve(task: Task) -> Tuple[int, List[Action]]:
         for a in path:
             game.apply_action(a)
 
+        if game.inventory['B'] > 0:
+            logger.info('attach extension')
+            game.apply_action(Action.attach(1, len(game.manipulator) - 2))
+
     score = game.finished()
+    logger.info(game.inventory)
     return score, game.actions
 
 
@@ -60,7 +71,7 @@ class GreedySolver(Solver):
         [] = args
 
     def scent(self) -> str:
-        return 'greedy 1'
+        return 'greedy 2'
 
     def solve(self, task: str) -> SolverResult:
         task = Task.parse(task)

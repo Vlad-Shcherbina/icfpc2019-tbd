@@ -35,6 +35,9 @@ class Pt:
     def rotated_cw(self):
         return Pt(x=self.y, y=-self.x)
 
+    def manhattan_dist(self, other):
+        return abs(self.x - other.x) + abs(self.y - other.y)
+
 
 Poly = List[Pt]
 
