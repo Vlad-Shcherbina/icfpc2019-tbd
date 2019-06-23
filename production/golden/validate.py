@@ -26,6 +26,13 @@ class ValidatorResult:
     time: Optional[int] # None on failures
     extra: dict # additional information, format is unstable
 
+def do_puz(cond: str, descr: str) -> ValidatorResult:
+    fname = os.path.join(os.path.dirname(__file__), "run.js")
+    result = subprocess.check_output(
+        ("node", fname, '-c', cond, '-d', descr),
+        universal_newlines=True)
+    return classify(result.strip())
+
 def do_run(tag: str, map: str, sol: str, boo: Optional[str]) -> ValidatorResult:
     fname = os.path.join(os.path.dirname(__file__), "run.js")
     if boo is None:
@@ -38,6 +45,39 @@ def do_run(tag: str, map: str, sol: str, boo: Optional[str]) -> ValidatorResult:
             universal_newlines=True)
     return classify(result.strip())
 
+
+def puz(cond: str, descr: str) -> ValidatorResult:
+    assert (utils.project_root() / 'production' / 'golden' / 'node_modules').exists(), '''
+    node_modules/ not found
+    You probably need to run the following:
+        cd production/golden
+        npm install
+    '''
+    assert (utils.project_root() / 'production' / 'golden' / 'icfpcontest2019.github.io').exists(), '''
+    icfpcontest2019.github.io/ not found
+    You probably need to run the following:
+        cd production/golden
+        ./setupGolden.sh
+    '''
+
+    cond_name = tempfile.NamedTemporaryFile(delete=False).name
+    with open(cond_name, 'w') as fout:
+        fout.write(cond)
+
+    descr_name = tempfile.NamedTemporaryFile(delete=False).name
+    with open(descr_name, 'w') as fout:
+        fout.write(descr)
+
+    result = do_puz(str(cond_name), str(descr_name))
+
+    os.remove(cond_name)
+    os.remove(descr_name)
+
+    return result
+    
+
+# UNTESTED ----------------------,
+#                                v
 def run(map: str, solution: str, boosters=None) -> ValidatorResult:
     assert (utils.project_root() / 'production' / 'golden' / 'node_modules').exists(), '''
     node_modules/ not found
@@ -60,12 +100,13 @@ def run(map: str, solution: str, boosters=None) -> ValidatorResult:
     with open(solution_name, 'w') as fout:
         fout.write(solution)
 
+    booster_name = None
     if boosters is not None:
         booster_name = tempfile.NamedTemporaryFile(delete=False).name
         with open(booster_name, 'w') as fout:
             fout.write(booster)
 
-    result = do_run("0.1.0-lgtn", str(map_name), str(solution_name), boosters)
+    result = do_run("0.1.0-lgtn", str(map_name), str(solution_name), booster_name)
 
     os.remove(map_name)
     os.remove(solution_name)

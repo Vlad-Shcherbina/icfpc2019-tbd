@@ -1,5 +1,5 @@
 from production import utils
-from production.golden.validate import run, do_run
+from production.golden.validate import run, do_run, puz
 from production.golden.validate import ValidatorResult
 import os
 
@@ -12,6 +12,14 @@ def test_big_solution():
     print(result)
     assert result.time == 44556
 '''
+
+
+def test_invalid_puzzle():
+    cond = (utils.project_root() / 'production' / 'golden' / 'puzzle.cond').read_text()
+    desc = (utils.project_root() / 'production' / 'golden' / 'broken.desc').read_text()
+    result = puz(cond, desc)
+    print(result)
+    assert result.extra['error']
 
 
 def test_valid_solution():
