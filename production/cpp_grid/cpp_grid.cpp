@@ -286,6 +286,9 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
         .def("__str__", [](const Pt & p) { return to_string(p); })
         .def("__repr__", [](const Pt & p) { return "Pt" + to_string(p); })
         .def("__hash__", [](const Pt & p) { return p.hash(); })
+        // we are immutable so return self as copy
+        .def("__copy__", [](const Pt & p) { return p; })
+        .def("__deepcopy__", [](const Pt & p, py::dict & memo) { return p; })
         .def_readonly("x", &Pt::x)
         .def_readonly("y", &Pt::y)
         ;
@@ -303,7 +306,10 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
                 a[b] = c;
             })
         .def("in_bounds", &CharGrid::in_bounds)
-        .def("copy", [](const CharGrid a) { return CharGrid(a); })
+        // all copies are deep
+        .def("copy", [](const CharGrid & a) { return CharGrid(a); })
+        .def("__copy__", [](const CharGrid & a) { return CharGrid(a); })
+        .def("__deepcopy__", [](const CharGrid & a, py::dict & memo) { return CharGrid(a); })
         .def("grid_as_text", &CharGrid::grid_as_text)
         .def("__str__", &CharGrid::grid_as_text)
         .def(py::self == py::self)

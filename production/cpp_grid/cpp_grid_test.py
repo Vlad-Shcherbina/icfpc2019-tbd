@@ -1,4 +1,5 @@
 from pytest import raises
+from copy import copy, deepcopy
 
 from production import utils
 import production.cpp_grid
@@ -16,6 +17,8 @@ def test_Pt():
     assert p1.rotated_cw() == p1.rotated_ccw().rotated_ccw().rotated_ccw()
     assert p1.rotated_cw() != p1.rotated_ccw().rotated_ccw()
     assert p1.manhattan_dist(p2) == 9 + 18
+    assert deepcopy(p1) == p1
+    assert copy(p1) == p1
 
 
 def test_CharGrid():
@@ -41,9 +44,12 @@ A B C D E
 K L M N O
 U V W X Y'''
 
-    g2 = g.copy()
-    g2[Pt(0, 0)] = 'Z'
-    assert g[Pt(0, 0)] == 'A'
+    for op in [g.copy, lambda: copy(g), lambda: deepcopy(g)]:
+        g2 = op()
+        assert g2 == g
+        g2[Pt(0, 0)] = 'Z'
+        assert g[Pt(0, 0)] == 'A'
+        assert g2 != g
 
     g3 = CharGrid([''.join(s.split()) for s in g.grid_as_text().split('\n')])
     assert g3 == g
