@@ -27,7 +27,7 @@ class BlockInfo:
     number: int
     num_subs: int
     we_can_submit: bool
-    timestamp: int
+    timestamp: float
     balances: dict
 
     puzzle: str
@@ -36,6 +36,10 @@ class BlockInfo:
     @property
     def time(self):
         return datetime.fromtimestamp(self.timestamp)
+
+    @property
+    def age_in_seconds(self):
+        return (datetime.now() - self.time).total_seconds()
 
 
 def get_block_info() -> BlockInfo:
@@ -64,21 +68,26 @@ def get_block_info() -> BlockInfo:
     )
 
 
+def submit(block_number, *, task: str, solution: str):
+    url = urllib.parse.urljoin(BLOCKCHAIN_ENDPOINT, 'submit')
+    data = {'private_id': PRIVATE_KEY, 'block_num': block_number}
+    files = {'solution': ('yo.sol', solution), 'puzzle': ('yo.desc', task)}
+    response = requests.post(url, data=data, files=files, allow_redirects=True)
+    j = response.json()
+    print(j)
+    # TODO
+
+
 def main():
     b = get_block_info()
     print(f' block number:  {b.number}')
     print(f'         time:  {b.time} ')
     print(f'                ({datetime.now() - b.time} ago)')
     print(f'we can submit:  {b.we_can_submit}')
+    print(f'     num subs:  {b.num_subs}')
+    print(f'  our balance:  {b.balances.get(str(PUBLIC_KEY), 0)}')
 
-    # for method in 'getblockchaininfo', 'getmininginfo', 'getbalances', 'getblockinfo/1':
-    #     print(method)
-    #     url = urllib.parse.urljoin(BLOCKCHAIN_ENDPOINT, method)
-    #     with urllib.request.urlopen(url) as s:
-    #         pprint(json.loads(s.read()))
-    #     print()
-
-    # pass
+    print(b.balances)
 
 
 if __name__ == '__main__':

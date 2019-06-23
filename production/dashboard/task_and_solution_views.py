@@ -34,7 +34,7 @@ LIST_TASKS_TEMPLATE = '''\
         <td>{{ ('/inv/%s' % task_inv_id) | linkify }}</td>
         <td>{{ ('/task/%s' % task_id) | linkify }}</td>
         <td>{{ task_name }}</td>
-        <td>{{ task_extra['legend'] }}</td>
+        <td>{{ task_extra.get('legend', '') }}</td>
     </tr>
 {% endfor %}
 </table>
