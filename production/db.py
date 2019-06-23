@@ -51,6 +51,9 @@ def create_tables(conn):
         -- gzipped task string
         data BYTEA NOT NULL,
 
+        obsolete BOOL NOT NULL DEFAULT FALSE,
+        -- to mark old Lambda-chain blocks
+
         extra JSON NOT NULL,
 
         invocation_id INTEGER NOT NULL REFERENCES invocations,

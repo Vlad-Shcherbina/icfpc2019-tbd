@@ -189,7 +189,7 @@ def main():
                 SELECT task_id AS solution_task_id FROM solutions WHERE scent = %s
             ) AS my_solutions
             ON solution_task_id = tasks.id
-            WHERE solution_task_id IS NULL
+            WHERE solution_task_id IS NULL AND NOT tasks.obsolete
             ''', [solver.scent()])
 
         task_ids = [id for [id] in cur if id not in seen_tasks]
