@@ -5,6 +5,7 @@ if __name__ == '__main__':
         format='%(levelname).1s %(module)10.10s:%(lineno)-4d %(message)s')
 
 from production.examples.cpp_demo import sample
+print(sample.__doc__)
 
 
 def main():  # pragma: no cover

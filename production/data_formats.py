@@ -5,7 +5,7 @@ from typing import ClassVar, Dict, Tuple
 from copy import copy
 
 from production import utils
-from production.geom import Pt, Poly, List, parse_poly, poly_bb, rasterize_poly
+from production.geom import Pt, Pt_parse, Poly, List, parse_poly, poly_bb, rasterize_poly
 
 @dataclass
 class Puzzle:
@@ -76,7 +76,7 @@ def _toListOfPoints(x: str) -> List[Pt]:
     # yeah, yeah, I know
     for v in xx:
         z = v.split(',')
-        y.append(Pt(x=int(z[0]), y=int(z[1])))
+        y.append(Pt(int(z[0]), int(z[1])))
     return y
 
 
@@ -95,7 +95,7 @@ class Booster:
     def parse(s):
         code = s[0]
         assert code in Booster.CODES
-        return Booster(code=code, pos=Pt.parse(s[1:]))
+        return Booster(code=code, pos=Pt_parse(s[1:]))
 
     def description(s):
         'Black magic: can be called both on strings and on instances'
@@ -140,7 +140,7 @@ class Task:
 
         return Task(
             border=parse_poly(border),
-            start=Pt.parse(start),
+            start=Pt_parse(start),
             obstacles=list(map(parse_poly, obstacles)),
             boosters=list(map(Booster.parse, boosters)),
         )

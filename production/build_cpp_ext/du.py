@@ -9,7 +9,7 @@ import pybind11
 
 def build_extension(caller_file, name, sources, headers, release):
     if platform.system() == 'Windows':
-        extra_compile_args = ['/std:c++latest']
+        extra_compile_args = ['/std:c++latest', '/Wall']
         if release:
             extra_compile_args.append('/Ox')
         else:

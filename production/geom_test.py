@@ -39,7 +39,7 @@ def test_visibility():
     assert visible(grid, Pt(2, 3), Pt(5, 2))
     assert visible(grid, Pt(1, 1), Pt(5, 5))
 
-    vis = render_visibility_grid(grid, Pt(x=13, y=12))
+    vis = render_visibility_grid(grid, Pt(13, 12))
 
     for row in vis:
         print(' '.join(row))
@@ -95,7 +95,7 @@ def check_vis(expected_vis):
                 row[x] = '.'
             if c == 'o':
                 assert eye is None
-                eye = Pt(x=x, y=y)
+                eye = Pt(x, y)
 
     vis = render_visibility_grid(grid, eye)
     for row in vis:
@@ -114,8 +114,8 @@ def render_visibility_grid(grid, eye):
     vis[eye.y][eye.x] = 'o'
     for y in range(len(grid)):
         for x in range(len(grid[y])):
-            v = visible(grid, eye, Pt(x=x, y=y))
-            v2 = visible(grid, Pt(x=x, y=y), eye)
+            v = visible(grid, eye, Pt(x, y))
+            v2 = visible(grid, Pt(x, y), eye)
             assert v == v2
             if grid[y][x] == '#':
                 assert not v

@@ -1,6 +1,6 @@
 from typing import Optional
 from collections import Counter
-from production.data_formats import GridTask, Action, Pt, Booster
+from production.data_formats import GridTask, Action, Pt, Pt_parse, Booster
 from production import geom
 
 
@@ -127,7 +127,7 @@ class Game:
         elif act.startswith('B'):
             if not self.inventory['B']:
                 raise InvalidActionException('Out of {}s!'.format(Booster.description('B')))
-            pt = Pt.parse(act[1:])
+            pt = Pt_parse(act[1:])
             if pt in bot.manipulator:
                 raise InvalidActionException("manipulator already there")
             if not any(pt.manhattan_dist(m) == 1 for m in bot.manipulator):
@@ -138,7 +138,7 @@ class Game:
 
         elif act.startswith('T'):
             self.inventory.subtract('T')
-            pt = Pt.parse(act[1:])
+            pt = Pt_parse(act[1:])
             if pt not in self.teleport_spots:
                 raise InvalidActionException("no teleport at destination")
             bot.pos = pt

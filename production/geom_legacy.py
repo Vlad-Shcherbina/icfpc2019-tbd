@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import List
 import re
 
+# If C++ module compilation breaks, take old implementations from here for comparison
+
 
 '''
 IMPORTANT: we write Pt(x, y), but grid[y][x] for various grids. Such is life.
@@ -12,13 +14,34 @@ At some point we'll write a grid class in C++, indexed with Pt's, which would mo
 
 '''
 
-from production.cpp_grid import Pt
+@dataclass(frozen=True)
+class Pt:
+    x: int
+    y: int
 
+    def __str__(self):
+        return f'({self.x},{self.y})'
 
-def Pt_parse(s):
-    m = re.match(r'\((-?\d+),(-?\d+)\)$', s)
-    assert m, s
-    return Pt(int(m.group(1)), int(m.group(2)))
+    @staticmethod
+    def parse(s):
+        m = re.match(r'\((-?\d+),(-?\d+)\)$', s)
+        assert m, s
+        return Pt(x=int(m.group(1)), y=int(m.group(2)))
+
+    def __add__(self, other):
+        return Pt(x=self.x + other.x, y=self.y + other.y)
+
+    def __sub__(self, other):
+        return Pt(x=self.x - other.x, y=self.y - other.y)
+
+    def rotated_ccw(self):
+        return Pt(x=-self.y, y=self.x)
+
+    def rotated_cw(self):
+        return Pt(x=self.y, y=-self.x)
+
+    def manhattan_dist(self, other):
+        return abs(self.x - other.x) + abs(self.y - other.y)
 
 
 Poly = List[Pt]
@@ -31,7 +54,7 @@ def parse_poly(s) -> Poly:
     while i < len(s):
         m = r.match(s, pos=i)
         assert m, (s, i)
-        poly.append(Pt(int(m.group(1)), int(m.group(2))))
+        poly.append(Pt(x=int(m.group(1)), y=int(m.group(2))))
         i = m.end()
     return poly
 
@@ -99,16 +122,6 @@ def pt_in_poly(pt: Pt, poly: Poly) -> bool:
         if pt.y == row.y and row.x1 <= pt.x < row.x2:
             return True
     return False
-
-def nearest_vertex(pt: Pt, poly: Poly) -> Pt:
-    x = 0
-    nearest = pt
-    for vertex in poly:
-        dist = pt.manhattan_dist(vertex)
-        if dist < x or nearest == pt:
-            x = dist
-            nearest = vertex
-    return nearest
 
 
 def visible(grid, p1: Pt, p2: Pt):

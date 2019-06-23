@@ -137,7 +137,7 @@ class Display:
         for y in range(game.height + 2):
             char(Pt(-1, y - 1), 'H', FgColors.Dungeon)
             char(Pt(game.width, y - 1), 'H', FgColors.Dungeon)
-            
+
         for y, row in enumerate(game.grid):
             for x, c in enumerate(row):
                 char(Pt(x, y), c, FgColors.Dungeon)
