@@ -91,14 +91,14 @@ def main():
 
             if not block_submitted:
                 sol = find_best_solution(conn, f'block-{block.number:04d}')
-                if sol is not None:
+                if sol is not None and new_block.age_in_seconds > 850:
                     lambda_chain.submit(block.number, solution=sol, task=task)
                     block_submitted = True
 
             logging.info('waiting...')
             db.record_this_invocation(conn, status=db.KeepRunning(60))
             conn.commit()
-            time.sleep(10)
+            time.sleep(20)
 
 
 if __name__ == '__main__':
