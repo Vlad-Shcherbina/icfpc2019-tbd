@@ -5,7 +5,7 @@ from production.solvers.boosty import BoostySolver
 ALL_SOLVERS = {
     'greedy': GreedySolver,
     'rotator': RotatorSolver,
-    # 'boosty': BoostySolver
+    'boosty': BoostySolver
 }
 
 

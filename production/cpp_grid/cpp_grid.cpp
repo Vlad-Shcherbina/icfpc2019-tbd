@@ -49,6 +49,11 @@ struct Pt {
     }
 
 
+    Pt operator*(int n) const {
+        return Pt(this->x * n, this->y * n);
+    }
+
+
     Pt rotated_ccw() const {
         return {-y, x};
     }
@@ -211,14 +216,14 @@ void bfs(CharGrid& grid, Pt start, BFS_BaseWalker* walker) {
     }
 }
 
-char pt_to_direction(const Pt& p) {
-    if (p == Pt(0, 1))       return 'W';
-    else if (p == Pt(1, 0))  return 'D';
-    else if (p == Pt(0, -1)) return 'S';
-    else if (p == Pt(-1, 0)) return 'A';
-    else if (p == Pt(0, 0))  return 'Z';
-    else assert(false);
-}
+// char pt_to_direction(const Pt& p) {
+//     if (p == Pt(0, 1))       return 'W';
+//     else if (p == Pt(1, 0))  return 'D';
+//     else if (p == Pt(0, -1)) return 'S';
+//     else if (p == Pt(-1, 0)) return 'A';
+//     else if (p == Pt(0, 0))  return 'Z';
+//     else assert(false);
+// }
 
 
 class PathFinder : public BFS_BaseWalker {
@@ -227,8 +232,8 @@ public:
     Pt src;
     Pt dest;
     Pt last;
-    std::unordered_map<Pt, vector<char>> paths;
-    vector<char> result;
+    std::unordered_map<Pt, vector<Pt>> paths;
+    vector<Pt> result;
 
     PathFinder(const CharGrid& grid, Pt src, Pt dest)
     : grid(grid)
@@ -236,7 +241,7 @@ public:
     , dest(dest)
     , last(src)
     {
-        paths[src] = vector<char>();
+        paths[src] = { src };
     }
 
     bool is_suitable(const Pt& p) override {
@@ -249,9 +254,8 @@ public:
     }
 
     void run_neighbour(const Pt& p) override {
-        char cmd = pt_to_direction(p - last);
         paths[p] = paths[last];
-        paths[p].push_back(cmd);
+        paths[p].push_back(p);
         if (p == dest) {
             stop = true;
             result = paths[p];
@@ -274,6 +278,7 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
         .def(py::self - py::self)
         .def(py::self == py::self)
         .def(py::self != py::self)
+        .def(py::self * int())
         .def(-py::self)
         .def("rotated_cw", &Pt::rotated_cw)
         .def("rotated_ccw", &Pt::rotated_ccw)
@@ -308,8 +313,9 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
     m.def("pathfind", [](CharGrid& grid, Pt start, Pt end){
         auto executor = new PathFinder(grid, start, end);
         bfs(grid, start, executor);
-        vector<char> result = executor->result;
+        vector<Pt> result = executor->result;
         delete executor;
         return result;
     });
+
 }

@@ -10,33 +10,64 @@ from production.geom import poly_bb, rasterize_poly, visible
 from production.solvers.interface import *
 from production.game import Game
 from production.solvers.greedy import GreedySolver
+from production.cpp_grid import Pt, CharGrid
+from production.cpp_grid.cpp_grid_ext import pathfind
+# from production.examples.cpp_demo import sample
 
 
-def turn_pt(p: Pt, turn: str) -> Pt:
-    assert len(turn) == 1, turn
-    if turn == 'E':
-        return p.rotated_cw()
-    elif turn == 'Q':
-        return p.rotated_ccw()
-    else:
-        assert False, turn
+# how many moves can be traded for wrapped squares
+# total_cost = moves - wrapped_squares * wrap_tradeoff
+WRAP_TRADEOFF = 0.5
+BOOST_TRADEOFF = 5
+
+SEARCH_RADIUS = 5
+
+
+def search_boosts(game: Game, pos: Pt, allowed='B'):
+    available = []
+    for dx in range(-SEARCH_RADIUS, SEARCH_RADIUS + 1):
+        for dy in range(-SEARCH_RADIUS, SEARCH_RADIUS + 1):
+            p = pos + Pt(dx, dy)
+            if not game.grid.in_bounds(p):
+                continue
+            for b in game.boosters:
+                if b.pos != p: continue
+                if b.code not in allowed: continue
+                available.append(b)
+    return available
+
+
+ #    o
+ # ~~~~~~  <- symmetrical attach
+def attach_manip(game: Game, botindex = 0):
+    bot = game.bots[botindex]
+    d = None
+    for d in Action.DIRS.keys():
+        if d in bot.manipulator:
+            break
+    assert d is not None
+    ccw = d.rotated_ccw()
+    i = 0
+    while True:
+        candidate = d + ccw * i
+        if candidate not in bot.manipulator:
+            break
+        candidate = d - ccw * i
+        if candidate not in bot.manipulator:
+            break
+        i += 1
+    game.apply_action(Action.attach(candidate.x, candidate.y))
 
 
 # it's copy-pasted from greedy.py with only rotation addition
-def solve(task: Task, turns: str, bestscore=None) -> Tuple[Optional[int], List[List[Action]], dict]:
-    task = GridTask(task)
-
-    game = Game(task)
-
+def solve(game, bestscore=None) -> Tuple[Optional[int], List[List[Action]], dict]:
     cnt = 0
-
-    for t in turns:
-        game.apply_action(Action.simple(t))
 
     while not game.finished():
         cnt += 1
         if cnt % 1000 == 0:
             logging.info(f'{len(game.unwrapped)} unwrapped')
+
         prev = {game.bots[0].pos: None}
         frontier = [game.bots[0].pos]
         while frontier:
@@ -73,14 +104,22 @@ def solve(task: Task, turns: str, bestscore=None) -> Tuple[Optional[int], List[L
         assert dst is not None
         assert dst != game.bots[0].pos
 
-        path = []
-        p = dst
-        while p != game.bots[0].pos:
-            d = p - prev[p]
-            path.append(Action.DIRS[d])
-            p = prev[p]
-            assert p is not None
-        path.reverse()
+
+        pf = pathfind(game.grid, game.bots[0].pos, dst)
+
+        for p in pf:
+            boosts = search_boosts(game, p, 'B')
+            for b in boosts:
+                new_pf = (pathfind(game.grid, game.bots[0].pos, b.pos)
+                          + pathfind(game.grid, b.pos, dst)[1:])
+                if len(new_pf) - 1 - BOOST_TRADEOFF < len(pf):
+                    pf = new_pf
+
+        path = [Action.DIRS[pf[i + 1] - pf[i]] for i in range(len(pf) - 1)]
+
+
+
+
         for a in path:
             game.apply_action(a)
         if bestscore is not None and game.turn >= bestscore:
@@ -88,10 +127,7 @@ def solve(task: Task, turns: str, bestscore=None) -> Tuple[Optional[int], List[L
 
         if game.inventory['B'] > 0:
             logger.info('attach extension')
-            attach_to = Pt(1, len(game.bots[0].manipulator) - 2)
-            for t in turns:
-                attach_to = turn_pt(attach_to, t)
-            game.apply_action(Action.attach(attach_to.x, attach_to.y))
+            attach_manip(game, 0)
 
 
     score = game.finished()
@@ -102,20 +138,31 @@ def solve(task: Task, turns: str, bestscore=None) -> Tuple[Optional[int], List[L
     return score, game.get_actions(), extra
 
 
+# ---------------------------------------------------------- #
 
 class BoostySolver(Solver):
     def __init__(self, args: List[str]):
-        [] = args
+        if len(args) == 2:
+            WRAP_TRADEOFF = float(args[0])
+            BOOST_TRADEOFF = float(args[1])
+
 
     def scent(self) -> str:
-        return 'rotator 1'
+        return 'boosty 0.1'
 
     def solve(self, task: str) -> SolverResult:
         task = Task.parse(task)
         min_score = None
 
-        for turns in ('', 'E', 'EE', 'Q'):
-            expected_score, actions, extra = solve(task, turns, min_score)
+        for turns in ([],
+                      [Action.turnCCW()],
+                      [Action.turnCCW(), Action.turnCCW()],
+                      [Action.turnCW()]):
+            game = Game(GridTask(task))
+            for t in turns:
+                game.apply_action(t)
+
+            expected_score, actions, extra = solve(game, min_score)
             if expected_score is None:
                 # solution has exceeded the best score and stopped
                 continue
@@ -130,7 +177,7 @@ class BoostySolver(Solver):
 def main():
     s = Path(utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01.desc').read_text()
     task = Task.parse(s)
-    sol = solve(task)
+    _, sol, _ = solve(Game(GridTask(task)))
     sol = compose_actions(sol)
     print(sol)
     print(len(sol), 'time units')
@@ -150,7 +197,4 @@ if __name__ == '__main__':
         import hintcheck
         hintcheck.hintcheck_all_functions()
 
-    # main()
-    s = Path(utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01.desc').read_text()
-    grid = GridTask(Task.parse(s))
-    
+    main()    
