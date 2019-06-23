@@ -1,3 +1,5 @@
+import pytest
+
 from production.geom import *
 from production import utils
 from production.data_formats import Task, GridTask
@@ -13,6 +15,18 @@ def test_pt_in_poly():
     poly = [Pt(0, 0), Pt(1, 0), Pt(1, 1), Pt(0, 1)]
     assert pt_in_poly(Pt(0, 0), poly)
     assert not pt_in_poly(Pt(1, 0), poly)
+
+
+@pytest.mark.parametrize('cells', [
+    {Pt(3, 7)},
+    {Pt(3, 7), Pt(4, 7)},
+    {Pt(3, 7), Pt(4, 7), Pt(4, 8)},
+])
+def test_trace_poly(cells):
+    poly = trace_poly(cells)
+    print(poly)
+    cells2 = {Pt(x, row.y) for row in rasterize_poly(poly) for x in range(row.x1, row.x2)}
+    assert cells == cells2
 
 
 def test_visibility():

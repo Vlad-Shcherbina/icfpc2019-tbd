@@ -1,7 +1,7 @@
 import dataclasses
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import List, Set
 import re
 
 
@@ -117,6 +117,34 @@ def nearest_vertex(pt: Pt, poly: Poly) -> Pt:
             x = dist
             nearest = vertex
     return nearest
+
+
+def trace_poly(cells: Set[Pt]) -> Poly:
+    '''Reconstruct poly given set of all cells inside it.'''
+    edges = []
+    for cell in cells:
+        if (cell + Pt(1, 0)) not in cells:
+            edges.append((cell + Pt(1, 0), cell + Pt(1, 1)))
+        if (cell + Pt(0, 1)) not in cells:
+            edges.append((cell + Pt(1, 1), cell + Pt(0, 1)))
+        if (cell + Pt(-1, 0)) not in cells:
+            edges.append((cell + Pt(0, 1), cell))
+        if (cell + Pt(0, -1)) not in cells:
+            edges.append((cell, cell + Pt(1, 0)))
+    d = {}
+    for a, b in edges:
+        assert a not in d, 'self-intersection'
+        d[a] = b
+
+    start, pt = d.popitem()
+    poly = [start]
+    while pt != start:
+        poly.append(pt)
+        pt = d.pop(pt)
+
+    assert not d, 'hole or island'
+
+    return poly
 
 
 def visible(grid : CharGrid, p1: Pt, p2: Pt):
