@@ -22,7 +22,7 @@ def find_best_solution(conn, problem_name) -> Optional[str]:
     cur = conn.cursor()
     cur.execute('''
     SELECT
-        solutions.id, solutions.score, solutions.data
+        solutions.id, solutions.score, solutions.data, solutions.scent
     FROM tasks
     JOIN solutions ON solutions.task_id = tasks.id
     WHERE tasks.name = %s AND solutions.status = 'DONE'
@@ -30,8 +30,8 @@ def find_best_solution(conn, problem_name) -> Optional[str]:
     LIMIT 1
     ''', [problem_name])
 
-    for id, score, data in cur:
-        logger.info(f'best solution sol/{id} with score {score}')
+    for id, score, data, scent in cur:
+        logger.info(f'best solution sol/{id} with score {score} by {scent}')
         return zlib.decompress(data).decode()
 
     logger.info(f'no solutions for {problem_name}')
@@ -46,6 +46,12 @@ def upload_current_task(conn, block):
     extra = {}
 
     cur.execute('''
+    UPDATE tasks SET
+        obsolete = TRUE
+    WHERE name LIKE 'block-%%' AND name != %s
+    ''', [name])
+
+    cur.execute('''
         INSERT INTO tasks(
             name, data, extra, invocation_id, time)
         VALUES (%s, %s, %s, %s, NOW())
@@ -55,11 +61,11 @@ def upload_current_task(conn, block):
         [name, data, json.dumps(extra), db.get_this_invocation_id(conn)])
     res = cur.fetchall()
     if res:
-        conn.commit()
         [[task_id]] = res
         logger.info(f'Uploaded {name!r} as /task/{task_id}')
     else:
         logger.info(f'Task {name!r} already exists')
+    conn.commit()
 
 
 def main():
