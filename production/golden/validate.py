@@ -111,6 +111,7 @@ def run(map: str, solution: str, boosters=None) -> ValidatorResult:
         # SELECT id, extra->'validator'->'error', scent FROM solutions WHERE status='CHECK_FAIL'
         # and checking what looks like bullshit
         if result in [
+            '',
             'Done uploading solution',
             'Done uploading task description',
             'Cannot check: some parts of the input are missing or malformed',
