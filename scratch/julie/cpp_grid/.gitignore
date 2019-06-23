@@ -1,6 +1,0 @@
-build/
-build2/
-*.pyd
-*.so
-*.meta
-*.pdb
