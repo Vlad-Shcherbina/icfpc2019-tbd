@@ -23,8 +23,10 @@ def solve(task: Task) -> Tuple[int, List[List[Action]], dict]:
         prev = {game.bots[0].pos: None}
         frontier = [game.bots[0].pos]
         while frontier:
+            best_rank = 0
             dst = None
             for p in frontier:
+                rank = 0
                 for m in game.bots[0].manipulator:
                     q = p + m
                     # TODO: visibility and bounds check
@@ -32,7 +34,10 @@ def solve(task: Task) -> Tuple[int, List[List[Action]], dict]:
                         game.grid[q] == '.' and
                         q in game.unwrapped and
                         visible(game.grid, q, p)):
-                        dst = p
+                        rank += 1
+                if rank > best_rank:
+                    best_rank = rank
+                    dst = p
             if dst is not None:
                 break
 
@@ -79,7 +84,7 @@ class GreedySolver(Solver):
         [] = args
 
     def scent(self) -> str:
-        return 'greedy 2'
+        return 'greedy 3'
 
     def solve(self, task: str) -> SolverResult:
         task = Task.parse(task)
