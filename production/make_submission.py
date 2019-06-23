@@ -16,16 +16,16 @@ def main():
 
     cur.execute('''
         SELECT
-            tasks.name, solutions.id, solutions.score
+            tasks.name, solutions.id, solutions.score, solutions.scent
         FROM tasks
         JOIN solutions ON solutions.task_id = tasks.id
-        WHERE solutions.status = 'DONE'
+        WHERE solutions.status = 'DONE' AND tasks.name LIKE 'prob-%'
     ''')
     rows = cur.fetchall()
     best_by_task = {}
-    for task_name, sol_id, score in rows:
+    for task_name, sol_id, score, scent in rows:
         assert score is not None
-        k = (score, sol_id)
+        k = (score, sol_id, scent)
         if task_name not in best_by_task:
             best_by_task[task_name] = k
         else:
@@ -35,15 +35,15 @@ def main():
     print(best_by_task)
 
     with open(utils.project_root() / 'outputs' / f'submission_{t}.manifest', 'w') as fout:
-        for task_name, (score, sol_id) in sorted(best_by_task.items()):
-            fout.write(f'{task_name} {score:>15} /sol/{sol_id}\n')
+        for task_name, (score, sol_id, scent) in sorted(best_by_task.items()):
+            fout.write(f'{task_name} {score:>15} /sol/{sol_id} by {scent}\n')
 
     path = (
         utils.project_root() / 'outputs' /
         f'submission_{t}.zip')
     z = zipfile.ZipFile(path, 'w')
 
-    for task_name, (score, sol_id) in sorted(best_by_task.items()):
+    for task_name, (score, sol_id, scent) in sorted(best_by_task.items()):
         print(task_name)
         cur.execute('SELECT data FROM solutions WHERE id = %s', [sol_id])
         [data] = cur.fetchone()
