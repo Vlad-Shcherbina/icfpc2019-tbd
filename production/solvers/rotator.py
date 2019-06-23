@@ -36,6 +36,7 @@ def solve(task: Task, turns: str, bestscore=None) -> Tuple[Optional[int], List[L
         cnt += 1
         if cnt % 1000 == 0:
             logging.info(f'{len(game.unwrapped)} unwrapped')
+        extensions = {b.pos for b in game.boosters if b.code == 'B'}
         prev = {game.bots[0].pos: None}
         frontier = [game.bots[0].pos]
         while frontier:
@@ -43,6 +44,8 @@ def solve(task: Task, turns: str, bestscore=None) -> Tuple[Optional[int], List[L
             dst = None
             for p in frontier:
                 rank = 0
+                if p in extensions:
+                    rank += 5
                 for m in game.bots[0].manipulator:
                     q = p + m
                     # TODO: visibility and bounds check
@@ -106,7 +109,7 @@ class RotatorSolver(Solver):
         [] = args
 
     def scent(self) -> str:
-        return 'rotator 1'
+        return 'rotator 1 bonus'
 
     def solve(self, task: str) -> SolverResult:
         task = Task.parse(task)
