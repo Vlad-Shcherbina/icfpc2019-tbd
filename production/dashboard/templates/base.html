@@ -9,7 +9,8 @@
   <a href=" {{ url_for('hello') }}">hello</a> |
   <a href=" {{ url_for('list_invocations') }}">invocations</a> |
   <a href=" {{ url_for('list_tasks') }}">tasks</a> |
-  <a href=" {{ url_for('list_solutions') }}">solutions</a>
+  <a href=" {{ url_for('list_solutions', name='prob-%') }}">regular solutions</a>
+  <a href=" {{ url_for('list_solutions', name='block-%') }}">chain solutions</a>
   <hr>
 
   {% block body %}

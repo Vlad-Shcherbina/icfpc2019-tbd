@@ -100,6 +100,8 @@ BFLX - boosters
 
 @app.route('/sols')
 def list_solutions():
+    name_filter = flask.request.args.get('name', '%')
+
     conn = get_conn()
     cur = conn.cursor()
     cur.execute('''
@@ -110,8 +112,9 @@ def list_solutions():
             solutions.extra
         FROM tasks
         LEFT OUTER JOIN solutions ON solutions.task_id = tasks.id
+        WHERE tasks.name LIKE %s
         ORDER BY tasks.id ASC, solutions.id DESC
-    ''')
+    ''', [name_filter])
     rows = cur.fetchall()
     best_by_task = defaultdict(lambda: float('+inf'))
     for [task_id, _, _, _, _, score, _, _, _] in rows:
