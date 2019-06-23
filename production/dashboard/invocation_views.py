@@ -102,7 +102,7 @@ def view_invocation(id):
 
     cur.execute('''
         SELECT
-            id, status, score, task_id, scent, time
+            id, status, score, task_id, scent, time, extra
         FROM solutions
         WHERE invocation_id = %s
     ''', [id])
@@ -124,7 +124,7 @@ Run by: <b>{{ inv['user'] }}</b> <br>
 {% if solutions %}
 <h4>Solutions</h4>
 <table>
-{% for id, status, score, task_id, scent, time in solutions %}
+{% for id, status, score, task_id, scent, time, extra in solutions %}
     <tr>
         <td>{{ url_for('view_task', id=task_id) | linkify }}</td>
         <td>{{ url_for('view_solution', id=id) | linkify }}</td>
@@ -132,6 +132,7 @@ Run by: <b>{{ inv['user'] }}</b> <br>
         <td>{{ score }}</td>
         <td>{{ scent }}</td>
         <td>{{ time.strftime('%m-%d %H:%M:%S') }}</td>
+        <td>{{ extra.get('solver', '') }}</td>
     </tr>
 {% endfor %}
 </table>
