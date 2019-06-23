@@ -60,6 +60,43 @@ def run_for_errors(actions: List[Action]):
 
 
 
+def test_wheel_timer():
+    task_data = Path(utils.project_root() / 'tasks' / 'part-0-mock' / 'wheels.desc').read_text()
+    task = GridTask(Task.parse(task_data))
+
+    actionlist = ('QQDD' + 
+                     'F' +
+                     'ZZZZZZZZZZZZZZZZZZZZ' +
+                     'F' +
+                     'ZZZZZZZZZZZZZZZZZZZZ' + 
+                     'ZZZZZZZZZ' +
+                     'ZZZZZZZZZZZZZZZZZZZZ' +
+                     'ZZZZZZZZZZZZZZZZZZZZ' +
+                     'ZZZZZZZZZZ' + 
+                     'D')
+
+    game = Game(task)
+    for a in actionlist:
+        game.apply_action(Action.simple(a))
+
+    solution = compose_actions(game.get_actions())
+    expected_score = game.finished()
+    assert expected_score is None
+
+    game = Game(task)
+    for a in actionlist:
+        game.apply_action(Action.simple(a))
+    game.apply_action(Action.WSAD('D'))
+
+    solution = compose_actions(game.get_actions())
+    expected_score = game.finished()
+    er = validate.run(task_data, solution)
+
+    assert er.time is not None
+    assert er.time == expected_score
+
+
+
 
 def test_simple_moves():
     actions = Action.parse('WWWWWWWWWDDSSSSSSSSSDDDDWWWWWWWWWAASSDDDDDWWAZZSSSSSSSSS')

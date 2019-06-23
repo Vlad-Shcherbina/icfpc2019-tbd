@@ -124,9 +124,9 @@ class Game:
                 raise InvalidActionException('Out of {}s!'.format(Booster.description(act)))
             self.inventory.subtract(act)
             if act == 'L':
-                bot.drill_timer = 31
+                bot.drill_timer = max(31, bot.drill_timer + 30)
             elif act == 'F':
-                bot.wheels_timer = 51
+                bot.wheels_timer = max(51, bot.wheels_timer + 50)
             else:
                 self.teleport_spots.append(bot.pos)
 
