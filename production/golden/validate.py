@@ -26,12 +26,6 @@ class ValidatorResult:
     time: Optional[int] # None on failures
     extra: dict # additional information, format is unstable
 
-def do_puz(cond: str, descr: str) -> ValidatorResult:
-    fname = os.path.join(os.path.dirname(__file__), "run.js")
-    result = subprocess.check_output(
-        ("node", fname, '-c', cond, '-d', descr),
-        universal_newlines=True)
-    return classify(result.strip())
 
 def do_run(tag: str, map: str, sol: str, boo: Optional[str]) -> ValidatorResult:
     fname = os.path.join(os.path.dirname(__file__), "run.js")
@@ -46,18 +40,14 @@ def do_run(tag: str, map: str, sol: str, boo: Optional[str]) -> ValidatorResult:
     return classify(result.strip())
 
 
-def puz(cond: str, descr: str) -> ValidatorResult:
+def puz(cond: str, descr: str) -> str:
+    '''Return 'ok' or error message.'''
+
     assert (utils.project_root() / 'production' / 'golden' / 'node_modules').exists(), '''
     node_modules/ not found
     You probably need to run the following:
         cd production/golden
         npm install
-    '''
-    assert (utils.project_root() / 'production' / 'golden' / 'icfpcontest2019.github.io').exists(), '''
-    icfpcontest2019.github.io/ not found
-    You probably need to run the following:
-        cd production/golden
-        ./setupGolden.sh
     '''
 
     cond_name = tempfile.NamedTemporaryFile(delete=False).name
@@ -68,13 +58,20 @@ def puz(cond: str, descr: str) -> ValidatorResult:
     with open(descr_name, 'w') as fout:
         fout.write(descr)
 
-    result = do_puz(str(cond_name), str(descr_name))
+    fname = os.path.join(os.path.dirname(__file__), "run.js")
+    result = subprocess.check_output(
+        ("node", fname, '-c', cond_name, '-d', descr_name),
+        universal_newlines=True)
 
     os.remove(cond_name)
     os.remove(descr_name)
 
+    result = result.strip()
+    if result == 'Success===null':
+        return 'ok'
+    assert result != 'ok'
     return result
-    
+
 
 # UNTESTED ----------------------,
 #                                v
@@ -84,12 +81,6 @@ def run(map: str, solution: str, boosters=None) -> ValidatorResult:
     You probably need to run the following:
         cd production/golden
         npm install
-    '''
-    assert (utils.project_root() / 'production' / 'golden' / 'icfpcontest2019.github.io').exists(), '''
-    icfpcontest2019.github.io/ not found
-    You probably need to run the following:
-        cd production/golden
-        ./setupGolden.sh
     '''
 
     map_name = tempfile.NamedTemporaryFile(delete=False).name
