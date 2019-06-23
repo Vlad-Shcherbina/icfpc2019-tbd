@@ -24,13 +24,10 @@ exports.init = init
 
 run = async (p, m, s) => {
   const np = p.waitForNavigation({timeout: 60000})
-  
   await p.goto('file:///' + __dirname + '/icfpcontest2019.github.io/solution_checker/index.html')
-
   await p.waitForSelector('#submit_task')
   await p.waitForSelector('#submit_solution')
   await p.waitForSelector('#execute_solution')
-
   const f1input = await p.$('#submit_task')
   await f1input.uploadFile(m)
   const f2input = await p.$('#submit_solution')
@@ -44,9 +41,35 @@ run = async (p, m, s) => {
     await p.waitFor(20)
     result = await p.evaluate(() => document.querySelector('#output').textContent)
   }
-
   await np
-
   return [result, p]
 }
 exports.run = run
+
+puz = async (p, m, s, b) => {
+  const np = p.waitForNavigation({timeout: 60000})
+  await p.goto('file:///' + __dirname + '/icfpcontest2019.github.io/puzzle_checker/index.html')
+  await p.waitForSelector('#submit_task')
+  await p.waitForSelector('#submit_solution')
+  await p.waitForSelector('#execute_solution')
+  const f1input = await p.$('#submit_task')
+  await f1input.uploadFile(m)
+  const f2input = await p.$('#submit_solution')
+  await f2input.uploadFile(s)
+  if (b) {
+    const f2input = await p.$('#submit_boosters')
+    await f2input.uploadFile(b)
+  }
+  await p.click('#execute_solution')
+  await p.waitFor(35)
+  await p.click('#execute_solution')
+  await p.waitFor(10)
+  var result = await p.evaluate(() => document.querySelector('#output').textContent)
+  while (result.startsWith('Validating')) {
+    await p.waitFor(20)
+    result = await p.evaluate(() => document.querySelector('#output').textContent)
+  }
+  await np
+  return [result, p]
+}
+exports.puz = puz

@@ -26,14 +26,19 @@ class ValidatorResult:
     time: Optional[int] # None on failures
     extra: dict # additional information, format is unstable
 
-def do_run(tag: str, map: str, sol: str) -> ValidatorResult:
+def do_run(tag: str, map: str, sol: str, boo: Optional[str]) -> ValidatorResult:
     fname = os.path.join(os.path.dirname(__file__), "run.js")
-    result = subprocess.check_output(
-        ("node", fname, '-m', map, '-s', sol),
-        universal_newlines=True)
+    if boo is None:
+        result = subprocess.check_output(
+            ("node", fname, '-m', map, '-s', sol),
+            universal_newlines=True)
+    else:
+        result = subprocess.check_output(
+            ("node", fname, '-m', map, '-s', sol, '-b', boo),
+            universal_newlines=True)
     return classify(result.strip())
 
-def run(map: str, solution: str) -> ValidatorResult:
+def run(map: str, solution: str, boosters=None) -> ValidatorResult:
     assert (utils.project_root() / 'production' / 'golden' / 'node_modules').exists(), '''
     node_modules/ not found
     You probably need to run the following:
@@ -55,10 +60,18 @@ def run(map: str, solution: str) -> ValidatorResult:
     with open(solution_name, 'w') as fout:
         fout.write(solution)
 
-    result = do_run("0.1.0-lgtn", str(map_name), str(solution_name))
+    if boosters is not None:
+        booster_name = tempfile.NamedTemporaryFile(delete=False).name
+        with open(booster_name, 'w') as fout:
+            fout.write(booster)
+
+    result = do_run("0.1.0-lgtn", str(map_name), str(solution_name), boosters)
 
     os.remove(map_name)
     os.remove(solution_name)
+    if boosters is not None:
+        os.remove(booster_name)
+
     return result
 
 #TODO
@@ -66,7 +79,7 @@ def run(map: str, solution: str) -> ValidatorResult:
 #   undefined
 
 def main():
-    result = do_run("0.1.0-lgtn", sys.argv[1], sys.argv[2])
+    result = do_run("0.1.0-lgtn", sys.argv[1], sys.argv[2], sys.argv[3])
     print(result)
 
 if __name__ == "__main__":

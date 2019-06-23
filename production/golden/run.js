@@ -1,9 +1,17 @@
 const AP = require('argparse').ArgumentParser
 const L  = require('./lib')
 
-main = async (m, s) => {
+main = async (m, s, b) => {
   var [browser, page] = await L.init()
   var [result, page]  = await L.run(page, m, s)
+  await browser.close()
+  console.log(L.normalizeResult(result))
+  return 
+}
+
+mainPuz = async (m, s) => {
+  var [browser, page] = await L.init()
+  var [result, page]  = await L.puz(page, m, s)
   await browser.close()
   console.log(L.normalizeResult(result))
   return 
@@ -19,17 +27,41 @@ var ap = new AP({
 })
 
 ap.addArgument(
+  ['-b', '--boosters'],
+  {help: "Buy stuff with lambdacoins",
+   required: false}
+)
+
+ap.addArgument(
   ['-m', '--map'],
   {help: "Path to a .desc file",
-   required: true}
+   required: false}
 )
 
 ap.addArgument(
   ['-s', '--solution'],
   {help: "Path to a .sol file",
-   required: true}
+   required: false}
+)
+
+ap.addArgument(
+  ['-d', '--description'],
+  {help: "Path to generated .desc file",
+   required: false}
+)
+
+ap.addArgument(
+  ['-c', '--condition'],
+  {help: "Path to a .cond file",
+   required: false}
 )
 
 const args = ap.parseArgs()
 
-main(args.map, args.solution)
+if (args.map && args.solution) {
+  main(args.map, args.solution, args.boosters)
+}
+
+if (args.condition && args.description) {
+  mainPuz(args.condition, args.description)
+}
