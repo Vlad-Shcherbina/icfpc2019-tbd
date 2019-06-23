@@ -15,8 +15,11 @@ def solve(task: Task) -> Tuple[int, List[List[Action]], dict]:
 
     game = Game(task)
 
+    cnt = 0
     while not game.finished():
-        # logging.info(f'{len(game.unwrapped)} unwrapped')
+        cnt += 1
+        if cnt % 1000 == 0:
+            logging.info(f'{len(game.unwrapped)} unwrapped')
         prev = {game.bots[0].pos: None}
         frontier = [game.bots[0].pos]
         while frontier:

@@ -1,3 +1,10 @@
+import logging
+if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(levelname).1s %(module)10.10s:%(lineno)-4d %(message)s')
+logger = logging.getLogger(__name__)
+
 import sys
 import random
 import time
@@ -9,10 +16,8 @@ import queue
 import multiprocessing
 import multiprocessing.queues
 import argparse
-import logging
 import traceback
 from io import StringIO
-logger = logging.getLogger(__name__)
 
 from production import db
 from production import utils
@@ -173,23 +178,30 @@ def main():
     solver = ALL_SOLVERS[args.solver](args.solver_args)
     logger.info(f'Solver scent: {solver.scent()!r}')
 
-    # Select tasks that don't have solutions with our scent.
-    cur.execute('''
-        SELECT tasks.id
-        FROM tasks
-        LEFT OUTER JOIN (
-            SELECT task_id AS solution_task_id FROM solutions WHERE scent = %s
-        ) AS my_solutions
-        ON solution_task_id = tasks.id
-        WHERE solution_task_id IS NULL
-        ''', [solver.scent()])
+    seen_tasks = set()
 
-    task_ids = [id for [id] in cur]
-    logging.info(f'{len(task_ids)} tasks to solve: {task_ids}')
+    def get_tasks():
+        # Select tasks that don't have solutions with our scent.
+        cur.execute('''
+            SELECT tasks.id
+            FROM tasks
+            LEFT OUTER JOIN (
+                SELECT task_id AS solution_task_id FROM solutions WHERE scent = %s
+            ) AS my_solutions
+            ON solution_task_id = tasks.id
+            WHERE solution_task_id IS NULL
+            ''', [solver.scent()])
 
-    # to reduce collisions when multiple solvers are working in parallel
-    random.shuffle(task_ids)
-    # task_ids.sort(reverse=True)
+        task_ids = [id for [id] in cur if id not in seen_tasks]
+        seen_tasks.update(task_ids)
+        logging.info(f'{len(task_ids)} tasks to solve: {task_ids}')
+
+        # to reduce collisions when multiple solvers are working in parallel
+        random.shuffle(task_ids)
+        # task_ids.sort(reverse=True)
+        return task_ids
+
+    task_ids = get_tasks()
 
     num_workers = args.jobs
     output_queue = multiprocessing.Queue()
@@ -204,7 +216,7 @@ def main():
 
     cur = conn.cursor()
     while True:
-        if available_workers and task_ids:
+        while available_workers and task_ids:
             task_id = task_ids.pop()
             cur.execute(
                 'SELECT COUNT(*) FROM solutions WHERE task_id = %s AND scent = %s',
@@ -226,30 +238,41 @@ def main():
             else:
                 logging.info(f'task/{task_id} already done by another worker, skipping')
             logging.info(f'{len(task_ids)} tasks remaining')
-        else:
-            if len(available_workers) == num_workers:
-                break
 
-            while True:
-                db.record_this_invocation(conn, status=db.KeepRunning(40))
-                conn.commit()
-                try:
-                    output_entry = output_queue.get(timeout=20)
+        #if len(available_workers) == num_workers:
+        #    break
+
+        cont = False
+        while True:
+            if available_workers and not task_ids:
+                logging.info(f'No more new tasks, {num_workers - len(available_workers)} still in progress, looking for more...')
+                task_ids = get_tasks()
+                if task_ids:
+                    cont = True
                     break
-                except queue.Empty:
-                    logging.info('waiting...')
 
-            assert output_entry.worker_index not in available_workers
-            available_workers.add(output_entry.worker_index)
-            logging.info(
-                f'Got solution for task/{output_entry.task_id}, '
-                f'score={output_entry.result.score} '
-                f'from worker {output_entry.worker_index}')
-            if args.dry_run:
-                logging.info(f'Skip saving because dry-run')
-            else:
-                put_solution(conn, output_entry.task_id, output_entry.result)
-                conn.commit()
+            db.record_this_invocation(conn, status=db.KeepRunning(40))
+            conn.commit()
+            try:
+                output_entry = output_queue.get(timeout=20)
+                break
+            except queue.Empty:
+                logging.info('waiting...')
+
+        if cont:
+            continue
+
+        assert output_entry.worker_index not in available_workers
+        available_workers.add(output_entry.worker_index)
+        logging.info(
+            f'Got solution for task/{output_entry.task_id}, '
+            f'score={output_entry.result.score} '
+            f'from worker {output_entry.worker_index}')
+        if args.dry_run:
+            logging.info(f'Skip saving because dry-run')
+        else:
+            put_solution(conn, output_entry.task_id, output_entry.result)
+            conn.commit()
 
     db.record_this_invocation(conn, status=db.Stopped())
     conn.commit()
@@ -262,11 +285,6 @@ def main():
 
 
 if __name__ == '__main__':
-    import logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(levelname).1s %(module)10.10s:%(lineno)-4d %(message)s')
-
     from importlib.util import find_spec
     if find_spec('hintcheck'):
         import hintcheck
