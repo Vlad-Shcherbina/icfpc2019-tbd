@@ -96,13 +96,24 @@ class CharGrid {
 public:
 
     CharGrid() = delete;
-    CharGrid(const CharGrid&) = delete;
-    CharGrid(CharGrid&&) = delete;
+    CharGrid(const CharGrid&) = default;
+    CharGrid(CharGrid&&) = default;
 
 
     CharGrid(int a_height, int a_width, char _default=0):
         height(a_height), width(a_width), data(height * width, _default)
     { }
+
+    
+    CharGrid(const vector<string> & init):
+        height((int)init.size()), width((int)init.at(0).size()), data(height * width)
+    {
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                data[y * width + x] = init[y].at(x);
+            }
+        }
+    }
 
 
     int get_height() const {
@@ -145,6 +156,15 @@ public:
         }
         return res;
     }
+
+    bool operator==(const CharGrid& other) const {
+        return height == other.height && width == other.width && data == other.data;
+    }
+
+
+    bool operator!=(const CharGrid& other) const {
+        return !(*this == other);
+    }
 };
 
 
@@ -171,6 +191,7 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
     py::class_<CharGrid>(m, "CharGrid")
         .def(py::init<int, int>())
         .def(py::init<int, int, char>())
+        .def(py::init<const vector<string>&>())
         .def_property_readonly("width", &CharGrid::get_width)
         .def_property_readonly("height", &CharGrid::get_height)
         .def("__getitem__", [](const CharGrid &a, const Pt& b) {
@@ -180,7 +201,10 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
                 a[b] = c;
             })
         .def("in_bounds", &CharGrid::in_bounds)
+        .def("copy", [](const CharGrid a) { return CharGrid(a); })
         .def("grid_as_text", &CharGrid::grid_as_text)
         .def("__str__", &CharGrid::grid_as_text)
+        .def(py::self == py::self)
+        .def(py::self != py::self)
         ;
 }

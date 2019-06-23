@@ -26,7 +26,7 @@ def solve(task: Task) -> Tuple[int, List[List[Action]], dict]:
                     q = p + m
                     # TODO: visibility and bounds check
                     if (game.in_bounds(q) and
-                        game.grid[q.y][q.x] == '.' and
+                        game.grid[q] == '.' and
                         q in game.unwrapped and
                         visible(game.grid, q, p)):
                         dst = p
@@ -39,7 +39,7 @@ def solve(task: Task) -> Tuple[int, List[List[Action]], dict]:
                     p2 = p + d
                     if (p2 not in prev and 
                         game.in_bounds(p2) 
-                        and game.grid[p2.y][p2.x] == '.'):
+                        and game.grid[p2] == '.'):
 
                         prev[p2] = p
                         new_frontier.append(p2)

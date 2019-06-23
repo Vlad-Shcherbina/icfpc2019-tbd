@@ -41,10 +41,6 @@ def test_visibility():
 
     vis = render_visibility_grid(grid, Pt(13, 12))
 
-    for row in vis:
-        print(' '.join(row))
-    # no comparison with expected because it's too large
-
 
 def test_visibility_small():
     check_vis([
@@ -86,44 +82,41 @@ def test_visibility_ver():
 
 
 def check_vis(expected_vis):
-    expected_vis = [list(row.replace(' ', '')) for row in expected_vis]
-    grid = deepcopy(expected_vis)
+    expected_vis = CharGrid([row.replace(' ', '') for row in expected_vis])
+    grid = expected_vis.copy()
     eye = None
-    for y, row in enumerate(grid):
-        for x, c in enumerate(row):
-            if c in 'o+':
-                row[x] = '.'
-            if c == 'o':
-                assert eye is None
-                eye = Pt(x, y)
+    for p, c in enumerate_grid(grid):
+        if c in 'o+':
+            grid[p] = '.'
+        if c == 'o':
+            assert eye is None
+            eye = p
 
     vis = render_visibility_grid(grid, eye)
-    for row in vis:
-        print(' '.join(row))
-
+    print(vis.grid_as_text())
     assert vis == expected_vis
 
 
-def render_visibility_grid(grid, eye):
+def render_visibility_grid(grid: CharGrid, eye):
     '''
     o   eye location
     .   visible
     +   not visible
     '''
-    vis = deepcopy(grid)
-    vis[eye.y][eye.x] = 'o'
-    for y in range(len(grid)):
-        for x in range(len(grid[y])):
-            v = visible(grid, eye, Pt(x, y))
-            v2 = visible(grid, Pt(x, y), eye)
-            assert v == v2
-            if grid[y][x] == '#':
-                assert not v
-            elif grid[y][x] == '.':
-                if not v:
-                    vis[y][x] = '+'
-            else:
-                assert False, grid[y][x]
+    print(grid)
+    vis = grid.copy()
+    vis[eye] = 'o'
+    for p, c in enumerate_grid(grid):
+        v = visible(grid, eye, p)
+        v2 = visible(grid, p, eye)
+        assert v == v2
+        if c == '#':
+            assert not v
+        elif c == '.':
+            if not v:
+                vis[p] = '+'
+        else:
+            assert False, c
     return vis
 
 

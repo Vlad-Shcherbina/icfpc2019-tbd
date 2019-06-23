@@ -41,6 +41,13 @@ A B C D E
 K L M N O
 U V W X Y'''
 
+    g2 = g.copy()
+    g2[Pt(0, 0)] = 'Z'
+    assert g[Pt(0, 0)] == 'A'
+
+    g3 = CharGrid([''.join(s.split()) for s in g.grid_as_text().split('\n')])
+    assert g3 == g
+
 
 if __name__ == '__main__':
     utils.testmod()

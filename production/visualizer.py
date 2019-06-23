@@ -97,7 +97,7 @@ class Display:
             x = size.x - cols + 1
         else:
             x = int(pos.x - cols/2)
-            
+
 
         if size.y <= rows:
             y = 0
@@ -138,9 +138,8 @@ class Display:
             char(Pt(-1, y - 1), 'H', FgColors.Dungeon)
             char(Pt(game.width, y - 1), 'H', FgColors.Dungeon)
 
-        for y, row in enumerate(game.grid):
-            for x, c in enumerate(row):
-                char(Pt(x, y), c, FgColors.Dungeon)
+        for p, c in game.enumerate_grid():
+            char(p, c, FgColors.Dungeon)
 
 
     # pass game here in case at some point it becomes purely functional
@@ -153,15 +152,16 @@ class Display:
             bg_color = curses.COLOR_BLUE if game.is_wrapped(p) else curses.COLOR_BLACK
             p = p + offset
             pad.addstr(self.height - p.y + 1, p.x * 2, char + ' ', colormapping[fgcolor, bg_color])
-        
+
         bot = game.bots[self.current]
         area = max(bot.pos.manhattan_dist(bot.pos + m) for m in bot.manipulator)
 
         for y in range(bot.pos.y - area, bot.pos.y + area + 1):
             for x in range(bot.pos.x - area, bot.pos.x + area + 1):
-                if not game.in_bounds(Pt(x, y)):
+                p = Pt(x, y)
+                if not game.in_bounds(p):
                     continue
-                char(Pt(x, y), game.grid[y][x], FgColors.Dungeon)
+                char(p, game.grid[p], FgColors.Dungeon)
 
         for b in game.boosters:
             char(b.pos, b.code, FgColors.Booster)

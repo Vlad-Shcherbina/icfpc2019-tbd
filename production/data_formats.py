@@ -5,7 +5,7 @@ from typing import ClassVar, Dict, Tuple
 from copy import copy
 
 from production import utils
-from production.geom import Pt, Pt_parse, Poly, List, parse_poly, poly_bb, rasterize_poly
+from production.geom import Pt, Pt_parse, CharGrid, Poly, List, parse_poly, poly_bb, rasterize_poly, enumerate_grid
 
 @dataclass
 class Puzzle:
@@ -150,9 +150,15 @@ class Task:
 class GridTask:
     start: Pt
     boosters: List[Booster]
-    grid: List[List[str]]
-    width: int
-    height: int
+    grid: CharGrid
+
+    @property
+    def width(self) -> int:
+        return self.grid.width
+
+    @property
+    def height(self) -> int:
+        return self.grid.height
 
     @staticmethod
     def from_problem(n):
@@ -161,47 +167,36 @@ class GridTask:
 
 
     def mutable_grid(self):
-        return [[c for c in row] for row in self.grid]
+        return self.grid.copy()
 
 
     def grid_as_text(self):
         # TODO: add boosters and start
-        return '\n'.join(' '.join(row) for row in self.grid)
-
-
-    def grid_iter(self):
-        'return indices in the grid'
-        for y in range(self.height):
-            for x in range(self.width):
-                yield Pt(x, y)
+        return self.grid.grid_as_text()
 
 
     def __init__(self, task: Task):
         # do not do bounding box optimization
-        bb = poly_bb(task.border)
-        self.width = width = bb.x2
-        self.height = height = bb.y2
-
         self.start = task.start
         self.boosters = copy(task.boosters)
 
         # todo C++ grid
 
-        grid = [['#'] * width for _ in range(height)]
+        bb = poly_bb(task.border)
+        grid = self.grid = CharGrid(bb.y2, bb.x2, '#')
 
         def render(poly, c):
             for row in rasterize_poly(poly):
                 for x in range(row.x1, row.x2):
-                    assert grid[row.y][x] != c
-                    grid[row.y][x] = c
+                    assert grid[Pt(x, row.y)] != c
+                    grid[Pt(x, row.y)] = c
 
         render(task.border, '.')
 
         for obstacle in task.obstacles:
             render(obstacle, '#')
 
-        # safety
-        self.grid = tuple(''.join(row) for row in grid)
+        # TODO: make grid immutable as before?
 
 
 param_action_re = re.compile(r'[B|T]\(-?\d+,-?\d+\)') # B(-1,2) or T(3,5)

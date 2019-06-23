@@ -1,6 +1,6 @@
 from typing import Optional
 from collections import Counter
-from production.data_formats import GridTask, Action, Pt, Pt_parse, Booster
+from production.data_formats import GridTask, Action, Pt, Pt_parse, Booster, enumerate_grid
 from production import geom
 
 
@@ -25,7 +25,7 @@ class Game:
         self.height = task.height
         self.width = task.width
         self.bots = [Bot(task.start)]
-        
+
         self.inventory = Counter()
         self.boosters = [b for b in task.boosters if b.code != 'X']
         self.clone_spawn = [b.pos for b in task.boosters if b.code == 'X']
@@ -33,12 +33,16 @@ class Game:
         self.turn = 0
 
         self.wrapped = set()
-        self.unwrapped = {p for p in self.task.grid_iter() if self.grid[p.y][p.x] == '.'}
+        self.unwrapped = {p for p, c in enumerate_grid(self.grid) if c == '.'}
         self.update_wrapped()
 
 
     def in_bounds(self, p: Pt):
-        return 0 <= p.x < self.width and 0 <= p.y < self.height
+        return self.grid.in_bounds(p)
+
+
+    def enumerate_grid(self):
+        return enumerate_grid(self.grid)
 
 
     def size(self) -> Pt:
@@ -81,12 +85,12 @@ class Game:
                 if not self.in_bounds(np):
                     raise InvalidActionException('Can\'t move out of map boundary')
 
-                target = self.grid[np.y][np.x]
+                target = self.grid[np]
                 if target != '.':
                     if bot.drill_timer and target == '#':
                         # "im not owned!  im not owned!!", the wall continues to insist
                         # as it slowly shrinks and transforms into a corn cob
-                        self.grid[np.y][np.x] = '.'
+                        self.grid[np] = '.'
                         self.unwrapped.add(np)
                     elif step:
                         # second step, OK to fail

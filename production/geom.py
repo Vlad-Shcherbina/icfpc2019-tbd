@@ -12,13 +12,21 @@ At some point we'll write a grid class in C++, indexed with Pt's, which would mo
 
 '''
 
-from production.cpp_grid import Pt
+from production.cpp_grid import Pt, CharGrid
 
 
 def Pt_parse(s):
     m = re.match(r'\((-?\d+),(-?\d+)\)$', s)
     assert m, s
     return Pt(int(m.group(1)), int(m.group(2)))
+
+
+def enumerate_grid(grid):
+    'return indices and values in the grid'
+    for y in range(grid.height):
+        for x in range(grid.width):
+            p = Pt(x, y)
+            yield p, grid[p]
 
 
 Poly = List[Pt]
@@ -111,7 +119,7 @@ def nearest_vertex(pt: Pt, poly: Poly) -> Pt:
     return nearest
 
 
-def visible(grid, p1: Pt, p2: Pt):
+def visible(grid : CharGrid, p1: Pt, p2: Pt):
     dist = (p2 - p1)
     divider = (abs(dist.x) + abs(dist.y)) * 2 + 1
     move = (dist.x / divider, dist.y / divider)
@@ -124,7 +132,7 @@ def visible(grid, p1: Pt, p2: Pt):
     while True:
         current = (current[0] + move[0], current[1] + move[1])
         p = to_int(current)
-        if grid[p.y][p.x] != '.':
+        if grid[p] != '.':
             return False
         if p == p2:
             return True
