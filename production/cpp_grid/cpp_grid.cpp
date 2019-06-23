@@ -10,6 +10,7 @@ namespace py = pybind11;
 #include <string>
 #include <sstream>
 #include <unordered_map>
+#include <cassert>
 
 using std::vector;
 using std::string;
@@ -210,6 +211,56 @@ void bfs(CharGrid& grid, Pt start, BFS_BaseWalker* walker) {
     }
 }
 
+char pt_to_direction(const Pt& p) {
+    if (p == Pt(0, 1))       return 'W';
+    else if (p == Pt(1, 0))  return 'D';
+    else if (p == Pt(0, -1)) return 'S';
+    else if (p == Pt(-1, 0)) return 'A';
+    else if (p == Pt(0, 0))  return 'Z';
+    else assert(false);
+}
+
+
+class PathFinder : public BFS_BaseWalker {
+public:
+    const CharGrid& grid;
+    Pt src;
+    Pt dest;
+    Pt last;
+    std::unordered_map<Pt, vector<char>> paths;
+    vector<char> result;
+
+    PathFinder(const CharGrid& grid, Pt src, Pt dest)
+    : grid(grid)
+    , src(src)
+    , dest(dest)
+    , last(src)
+    {
+        paths[src] = vector<char>();
+    }
+
+    bool is_suitable(const Pt& p) override {
+        return grid[p] == '.' 
+            && paths.find(p) == paths.end();
+    }
+
+    void run_current(const Pt& p) override {
+        last = p;
+    }
+
+    void run_neighbour(const Pt& p) override {
+        char cmd = pt_to_direction(p - last);
+        paths[p] = paths[last];
+        paths[p].push_back(cmd);
+        if (p == dest) {
+            stop = true;
+            result = paths[p];
+        }
+    }
+};
+
+
+
 
 // ---------------- BFS walks -----------------------
 
@@ -253,4 +304,12 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
         .def(py::self == py::self)
         .def(py::self != py::self)
         ;
+
+    m.def("pathfind", [](CharGrid& grid, Pt start, Pt end){
+        auto executor = new PathFinder(grid, start, end);
+        bfs(grid, start, executor);
+        vector<char> result = executor->result;
+        delete executor;
+        return result;
+    });
 }

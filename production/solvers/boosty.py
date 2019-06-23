@@ -2,6 +2,7 @@ import logging
 logger = logging.getLogger(__name__)
 from pathlib import Path
 from typing import List, Tuple, Optional
+from copy import deepcopy
 
 from production import utils
 from production.data_formats import *
@@ -92,6 +93,7 @@ def solve(task: Task, turns: str, bestscore=None) -> Tuple[Optional[int], List[L
                 attach_to = turn_pt(attach_to, t)
             game.apply_action(Action.attach(attach_to.x, attach_to.y))
 
+
     score = game.finished()
     logger.info(game.inventory)
 
@@ -101,7 +103,7 @@ def solve(task: Task, turns: str, bestscore=None) -> Tuple[Optional[int], List[L
 
 
 
-class RotatorSolver(Solver):
+class BoostySolver(Solver):
     def __init__(self, args: List[str]):
         [] = args
 
@@ -132,7 +134,7 @@ def main():
     sol = compose_actions(sol)
     print(sol)
     print(len(sol), 'time units')
-    sol_path = Path(utils.project_root() / 'outputs' / 'example-01-rotator.sol')
+    sol_path = Path(utils.project_root() / 'outputs' / 'example-01-boosty.sol')
     sol_path.write_text(sol)
     print('result saved to', sol_path)
 
@@ -148,4 +150,7 @@ if __name__ == '__main__':
         import hintcheck
         hintcheck.hintcheck_all_functions()
 
-    main()
+    # main()
+    s = Path(utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01.desc').read_text()
+    grid = GridTask(Task.parse(s))
+    
