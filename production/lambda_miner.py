@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 import time
 import zlib
 import json
+import traceback
 from typing import Optional
 
 from production import db
@@ -80,12 +81,22 @@ def main():
         f.write_text(block.puzzle)
         logging.info(f'Block puzzle saved to {f}')
 
-        task = puzzle_solver.solve(Puzzle.parse(block.puzzle))
-        task = str(task)
-        logging.info(f'Validating puzzle solution...')
-        result = validate.puz(block.puzzle, task)
-        logging.info(result)
-        assert result == 'ok'
+        try:
+            task = puzzle_solver.solve(Puzzle.parse(block.puzzle))
+            task = str(task)
+            logging.info(f'Validating puzzle solution...')
+            result = validate.puz(block.puzzle, task)
+            logging.info(result)
+            assert result == 'ok'
+        except KeyboardInterrupt:
+            raise
+        except:
+            traceback.print_exc()
+            db.record_this_invocation(conn, status=db.KeepRunning(60))
+            conn.commit()
+            logging.info('waiting and retrying...')
+            time.sleep(20)
+            continue
 
         block_submitted = False
         while True:

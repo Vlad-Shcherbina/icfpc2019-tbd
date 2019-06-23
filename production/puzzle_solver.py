@@ -50,7 +50,6 @@ def solve(puzzle: Puzzle) -> Task:
     assert include.issubset(cells)
     assert not (omit & cells)
 
-    rnd = random.Random(42)
     poly = geom.trace_poly(cells)
 
     while len(poly) < puzzle.min_vertices:
@@ -58,7 +57,7 @@ def solve(puzzle: Puzzle) -> Task:
         for _ in range(num_steps):
             cx = list(cells)
             while True:
-                cell = rnd.choice(cx)
+                cell = random.choice(cx)
                 n = 0
                 for d in Action.DIRS:
                     if cell + d in cells:
@@ -71,7 +70,7 @@ def solve(puzzle: Puzzle) -> Task:
     assert len(poly) <= puzzle.max_vertices, (len(poly), puzzle.max_vertices)
 
     cells = list(cells)
-    rnd.shuffle(cells)
+    random.shuffle(cells)
 
     boosters = []
     for _ in range(puzzle.extensions):
