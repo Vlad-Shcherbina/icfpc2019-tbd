@@ -101,10 +101,13 @@ BFLX - boosters
 @app.route('/sols')
 def list_solutions():
     name_filter = flask.request.args.get('name', '%')
+    rev = flask.request.args.get('reversed', '0')
+    assert rev in ('0', '1')
+    rev = rev == '1'
 
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute('''
+    cur.execute(f'''
         SELECT
             tasks.id, tasks.name,
             solutions.id, solutions.scent, solutions.status, solutions.score,
@@ -112,8 +115,8 @@ def list_solutions():
             solutions.extra
         FROM tasks
         LEFT OUTER JOIN solutions ON solutions.task_id = tasks.id
-        WHERE tasks.name LIKE %s
-        ORDER BY tasks.id ASC, solutions.id DESC
+        WHERE tasks.name SIMILAR TO %s
+        ORDER BY tasks.id {'DESC' if rev else 'ASC'}, solutions.id DESC
     ''', [name_filter])
     rows = cur.fetchall()
     best_by_task = defaultdict(lambda: float('+inf'))

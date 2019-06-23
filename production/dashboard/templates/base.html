@@ -7,10 +7,13 @@
 
 <body>
   <a href=" {{ url_for('hello') }}">hello</a> |
-  <a href=" {{ url_for('list_invocations') }}">invocations</a> |
-  <a href=" {{ url_for('list_tasks') }}">tasks</a> |
-  <a href=" {{ url_for('list_solutions', name='prob-%') }}">regular solutions</a>
-  <a href=" {{ url_for('list_solutions', name='block-%') }}">chain solutions</a>
+  <a href=" {{ url_for('list_invocations') }}">invocations</a> <br>
+  <a href=" {{ url_for('list_tasks') }}">tasks</a> <br>
+  <a href=" {{ url_for('list_solutions', name='prob-%') }}">all regular solutions (could be slow)</a> <br>
+  <a href=" {{ url_for('list_solutions', name='prob-0%') }}">solutions 1-99</a> <br>
+  <a href=" {{ url_for('list_solutions', name='prob-1%') }}">solutions 100-199</a> <br>
+  <a href=" {{ url_for('list_solutions', name='prob-(2|3)%') }}">solutions 200-300</a> <br>
+  <a href=" {{ url_for('list_solutions', name='block-%', reversed='1') }}">chain solutions</a>
   <hr>
 
   {% block body %}

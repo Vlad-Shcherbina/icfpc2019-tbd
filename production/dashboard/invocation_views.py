@@ -132,6 +132,10 @@ Run by: <b>{{ inv['user'] }}</b> <br>
         <td>{{ score }}</td>
         <td>{{ scent }}</td>
         <td>{{ time.strftime('%m-%d %H:%M:%S') }}</td>
+        <td>
+            {{ extra.get('solver_time', 0) | int }}s + {{
+               extra.get('validator_time', 0) | int }}s
+        </td>
         <td>{{ extra.get('solver', '') }}</td>
     </tr>
 {% endfor %}
