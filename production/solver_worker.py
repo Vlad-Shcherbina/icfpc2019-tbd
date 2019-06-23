@@ -159,9 +159,13 @@ def parse_args():
     cores = max(multiprocessing.cpu_count() - 1, 1)
     parser = argparse.ArgumentParser(prog='python -m production.solver_worker')
     # optional
-    parser.add_argument('-j', '--jobs', metavar='N', help=f'number of worker threads (default: all {cores} cores)',
+    parser.add_argument('-j', '--jobs', metavar='N',
+            help=f'number of worker threads (default: all {cores} cores)',
             type=int, default=cores)
-    parser.add_argument('-n', '--dry-run', help='Do not submit solutions to the database',
+    parser.add_argument('-n', '--dry-run',
+            help='Do not submit solutions to the database',
+            action='store_true')
+    parser.add_argument('-c', '--only-chain',
             action='store_true')
     # positional
     parser.add_argument('solver', help='solver to use', choices=ALL_SOLVERS.keys())
@@ -189,8 +193,10 @@ def main():
                 SELECT task_id AS solution_task_id FROM solutions WHERE scent = %s
             ) AS my_solutions
             ON solution_task_id = tasks.id
-            WHERE solution_task_id IS NULL AND NOT tasks.obsolete
-            ''', [solver.scent()])
+            WHERE solution_task_id IS NULL AND
+                  NOT tasks.obsolete AND
+                  tasks.name LIKE %s
+            ''', [solver.scent(), 'block-%' if args.only_chain else '%'])
 
         task_ids = [id for [id] in cur if id not in seen_tasks]
         seen_tasks.update(task_ids)
@@ -251,7 +257,10 @@ def main():
                     cont = True
                     break
 
-            db.record_this_invocation(conn, status=db.KeepRunning(40))
+            db.record_this_invocation(
+                conn,
+                status=db.KeepRunning(40),
+                extra=dict(remaining_tasks=len(task_ids) + num_workers - len(available_workers)))
             conn.commit()
             try:
                 output_entry = output_queue.get(timeout=20)

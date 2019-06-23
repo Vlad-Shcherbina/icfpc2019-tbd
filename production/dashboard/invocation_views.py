@@ -69,6 +69,7 @@ LIST_INVOCATIONS_TEMPLATE = '''\
         <th>Start time</th>
         <th>Status</th>
         <th>End time</th>
+        <th>Extra</th>
     </tr>
 {% for id, status, start_time, end_time, inv in rows %}
     <tr>
@@ -83,6 +84,7 @@ LIST_INVOCATIONS_TEMPLATE = '''\
                 {{ end_time.strftime('%m-%d %H:%M:%S') }}
             {% endif %}
         </td>
+        <td>{{ inv.get('extra', '') }}</td>
     </tr>
 {% endfor %}
 </table>
