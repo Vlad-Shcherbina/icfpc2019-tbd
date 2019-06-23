@@ -4,3 +4,7 @@ coverage
 pybind11
 flask
 psycopg2
+werkzeug
+json-rpc
+jsonrpc-requests
+cachetools
