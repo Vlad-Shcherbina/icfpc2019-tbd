@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -49,4 +50,5 @@ def testmod():
     import inspect
     frm = inspect.stack()[1]
     mod = inspect.getmodule(frm[0])
-    pytest.main(['-vx', mod.__file__])
+    args = sys.argv[1:] or ['-vx']
+    pytest.main([*args, mod.__file__])
