@@ -6,6 +6,7 @@ import tempfile
 from tempfile import NamedTemporaryFile
 from dataclasses import dataclass
 from typing import Optional
+import re
 
 from production import utils
 
@@ -97,7 +98,32 @@ def run(map: str, solution: str, boosters=None) -> ValidatorResult:
         with open(booster_name, 'w') as fout:
             fout.write(booster)
 
-    result = do_run("0.1.0-lgtn", str(map_name), str(solution_name), booster_name)
+    fname = os.path.join(os.path.dirname(__file__), "run.js")
+    cmd = ["node", fname, '-m', map_name, '-s', solution_name]
+    if boosters is not None:
+        cmd += ['-b', booster_name]
+
+    while True:
+        result = subprocess.check_output(cmd, universal_newlines=True)
+        result = result.strip()
+
+        # This list was produced by running
+        # SELECT id, extra->'validator'->'error', scent FROM solutions WHERE status='CHECK_FAIL'
+        # and checking what looks like bullshit
+        if result in [
+            'Done uploading solution',
+            'Done uploading task description',
+            'Cannot check: some parts of the input are missing or malformed',
+            ]:
+            logging.warning(f'Retrying what looks like chrome flake ({result})')
+            continue
+        break
+
+    m = re.match(r'Success===(\d+)$', result)
+    if m:
+        result = ValidatorResult(time=int(m.group(1)), extra={})
+    else:
+        result = ValidatorResult(time=None, extra=dict(error=result))
 
     os.remove(map_name)
     os.remove(solution_name)
@@ -105,14 +131,3 @@ def run(map: str, solution: str, boosters=None) -> ValidatorResult:
         os.remove(booster_name)
 
     return result
-
-#TODO
-#def solve(solver: TODOSolverClass, map: bytes, solution: bytes) -> ValidatorResult:
-#   undefined
-
-def main():
-    result = do_run("0.1.0-lgtn", sys.argv[1], sys.argv[2], sys.argv[3])
-    print(result)
-
-if __name__ == "__main__":
-    main()
