@@ -11,35 +11,35 @@ from production.solvers.interface import *
 from production.game import Game
 from production.solvers.greedy import GreedySolver
 from production.cpp_grid import Pt, CharGrid
-from production.cpp_grid.cpp_grid_ext import pathfind
-# from production.examples.cpp_demo import sample
+from production.cpp_grid.cpp_grid_ext import boostfind
 
+
+from time import time
 
 # how many moves can be traded for wrapped squares
-# total_cost = moves - wrapped_squares * wrap_tradeoff
-WRAP_TRADEOFF = 0.5
+# total_cost = moves - wrapped_squares * wrap_penalty
+WRAP_PENALTY = 20
 BOOST_TRADEOFF = 5
 
 SEARCH_RADIUS = 5
+ALLOWED = 'B'
 
+class timecount:
+    def __init__(self):
+        self.sum = 0
+        self.count = 0
 
-def search_boosts(game: Game, pos: Pt, allowed='B'):
-    available = []
-    for dx in range(-SEARCH_RADIUS, SEARCH_RADIUS + 1):
-        for dy in range(-SEARCH_RADIUS, SEARCH_RADIUS + 1):
-            p = pos + Pt(dx, dy)
-            if not game.grid.in_bounds(p):
-                continue
-            for b in game.boosters:
-                if b.pos != p: continue
-                if b.code not in allowed: continue
-                available.append(b)
-    return available
+    def add(self, time):
+        self.sum += time
+        self.count += 1
+
+    def result(self):
+        return self.sum / self.count
 
 
  #    o
  # ~~~~~~  <- symmetrical attach
-def attach_manip(game: Game, botindex = 0):
+def attach_manip(game: Game, bot_area, botindex = 0):
     bot = game.bots[botindex]
     d = None
     for d in Action.DIRS.keys():
@@ -47,6 +47,7 @@ def attach_manip(game: Game, botindex = 0):
             break
     assert d is not None
     ccw = d.rotated_ccw()
+
     i = 0
     while True:
         candidate = d + ccw * i
@@ -56,79 +57,138 @@ def attach_manip(game: Game, botindex = 0):
         if candidate not in bot.manipulator:
             break
         i += 1
+
+    for d in Action.DIRS.keys():
+        if candidate +  d not in bot_area:
+            bot_area.append(candidate + d)
     game.apply_action(Action.attach(candidate.x, candidate.y))
 
 
-# it's copy-pasted from greedy.py with only rotation addition
+def update_wrapped(grid: CharGrid, wrapped: CharGrid, bot):
+    wrapped[bot.pos] = '+'
+    for m in bot.manipulator:
+        if wrapped.in_bounds(bot.pos + m) and visible(grid, bot.pos, bot.pos + m):
+            wrapped[bot.pos + m] = '+'
+
+
+def is_frontier(p: Pt, grid, wrapped):
+    # print('-----', p, ' : ', end='')
+    if not grid.in_bounds(p):
+        # print('--- not in bounds')
+        return False
+    # if grid[p] == '#':
+    #     print('--- wall')
+    #     return False
+
+    if wrapped[p] != '.':
+        # print('--- wrapped')
+        return False
+
+    count = {'.' : 0, '+' : 0, '#' : 0}
+    for d in [Pt(0, 0)] + list(Action.DIRS.keys()):
+        if wrapped.in_bounds(p + d):
+            count[wrapped[p + d]] += 1
+    # print(f'--- {count["."]}, {count["+"]}')
+    return count['.'] > 0 and count['+'] > 0
+
+
+def clean_frontier(frontier, game, wrapped):
+    return [f for f in frontier if is_frontier(f, game.grid, wrapped)]
+    
+
 def solve(game, bestscore=None) -> Tuple[Optional[int], List[List[Action]], dict]:
     cnt = 0
+    wrapped = CharGrid(game.grid)
+    bot = game.bots[0]
+    update_wrapped(game.grid, wrapped, bot)
+
+    bot_area = []
+    bot_area.append(Pt(0, 0))
+    for m in bot.manipulator:
+        if m not in bot_area:
+            bot_area.append(m)
+        for d in Action.DIRS.keys():
+            if (m + d) not in bot_area:
+                bot_area.append(m + d)
+
+    # print(bot_area)
+
+    frontier = []
+    for m in bot_area:
+        if bot.pos + m not in frontier:
+            frontier.append(bot.pos + m)
+    frontier = clean_frontier(frontier, game, wrapped)
+
+    # t1time = timecount()
+    # t3time = timecount()
+    # t2time = timecount()
+
+    def remove(f, rm):
+        for i in range(len(f)):
+            if f[i] == rm:
+                f[i] = f[-1]
+                f.pop()
+                return
 
     while not game.finished():
+        # t1 = time()
         cnt += 1
         if cnt % 1000 == 0:
             logging.info(f'{len(game.unwrapped)} unwrapped')
 
-        prev = {game.bots[0].pos: None}
-        frontier = [game.bots[0].pos]
-        while frontier:
-            best_rank = 0
-            dst = None
-            for p in frontier:
-                rank = 0
-                for m in game.bots[0].manipulator:
-                    q = p + m
-                    # TODO: visibility and bounds check
-                    if (game.in_bounds(q) and
-                        game.grid[q] == '.' and
-                        q in game.unwrapped and
-                        visible(game.grid, q, p)):
-                        rank += 1
-                if rank > best_rank:
-                    best_rank = rank
-                    dst = p
-            if dst is not None:
-                break
+        boosts = [b.pos for b in game.boosters if b.code in ALLOWED]
+        penalty = (game.grid.height + game.grid.width) * 2
+        # t2 = time()
 
-            new_frontier = []
-            for p in frontier:
-                for d in Action.DIRS.keys():
-                    p2 = p + d
-                    if (p2 not in prev and 
-                        game.in_bounds(p2) 
-                        and game.grid[p2] == '.'):
+        path = boostfind(game.grid, wrapped, bot.pos, bot.manipulator,
+                         frontier, boosts, BOOST_TRADEOFF, penalty)
+        # t2time.add(time() - t2)
 
-                        prev[p2] = p
-                        new_frontier.append(p2)
-            frontier = new_frontier
+        # print(wrapped)
+        # print()
+        # print(bot.pos)
 
-        assert dst is not None
-        assert dst != game.bots[0].pos
+        # print("unwrapped:", game.unwrapped)
+        # print("path: ", path)
+        assert len(path) > 1
+        if len(path) > 2:
+            path.pop()
 
 
-        pf = pathfind(game.grid, game.bots[0].pos, dst)
-
-        for p in pf:
-            boosts = search_boosts(game, p, 'B')
-            for b in boosts:
-                new_pf = (pathfind(game.grid, game.bots[0].pos, b.pos)
-                          + pathfind(game.grid, b.pos, dst)[1:])
-                if len(new_pf) - 1 - BOOST_TRADEOFF < len(pf):
-                    pf = new_pf
-
-        path = [Action.DIRS[pf[i + 1] - pf[i]] for i in range(len(pf) - 1)]
-
-
-
-
-        for a in path:
+        cmds = [Action.DIRS[path[i + 1] - path[i]] for i in range(len(path) - 1)]
+        for a in cmds:
             game.apply_action(a)
+            update_wrapped(game.grid, wrapped, bot)
         if bestscore is not None and game.turn >= bestscore:
             return None, [], {}
 
         if game.inventory['B'] > 0:
             logger.info('attach extension')
-            attach_manip(game, 0)
+            attach_manip(game, bot_area, 0)
 
+        # print("FR before: ", frontier)
+        # t3 = time()
+        checked = []
+        for p in path:
+            for m in bot_area:
+                pm = p + m
+                if pm in checked:
+                    continue
+
+                if is_frontier(pm, game.grid, wrapped):
+                    if pm not in frontier:
+                        frontier.append(pm)
+                else:
+                    remove(frontier, pm)
+                checked.append(pm)
+
+        remove(frontier, bot.pos)
+        # t3time.add(time() - t3)
+        # t1time.add(time() - t1)
+
+        # print("FR after: ", frontier)
+
+        # print(f'overall: {t1time.result():.4} cpp: {t2time.result():.4} front: {t3time.result():.4} len: {len(frontier)}')
 
     score = game.finished()
     logger.info(game.inventory)
@@ -142,22 +202,37 @@ def solve(game, bestscore=None) -> Tuple[Optional[int], List[List[Action]], dict
 
 class BoostySolver(Solver):
     def __init__(self, args: List[str]):
-        if len(args) == 2:
-            WRAP_TRADEOFF = float(args[0])
-            BOOST_TRADEOFF = float(args[1])
+        if len(args) == 1:
+            if args[0] == 'rotate':
+                self.turns = True
+            elif args[0] == 'straight':
+                self.turns = False
+            else:
+                assert False, args
+        elif len(args) == 0:
+            self.turns = True
+        else:
+            assert False, args
 
 
     def scent(self) -> str:
-        return 'boosty 0.1'
+        return 'boosty 1 ' + ('rotate' if self.turns else 'straight')
 
     def solve(self, task: str) -> SolverResult:
         task = Task.parse(task)
         min_score = None
+        min_actions = []
+        min_extra = {}
 
-        for turns in ([],
-                      [Action.turnCCW()],
-                      [Action.turnCCW(), Action.turnCCW()],
-                      [Action.turnCW()]):
+        turnlist = [[]]
+        if self.turns:
+            turnlist += [[Action.turnCCW()],
+                         [Action.turnCCW(), Action.turnCCW()],
+                         [Action.turnCW()]]
+
+        # turnlist = [[Action.turnCW()]]
+
+        for turns in turnlist:
             game = Game(GridTask(task))
             for t in turns:
                 game.apply_action(t)
@@ -175,9 +250,15 @@ class BoostySolver(Solver):
 
 
 def main():
-    s = Path(utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01.desc').read_text()
+    s = Path(utils.project_root() / 'tasks' / 'part-1-initial' / 'prob-145.desc').read_text()
+    solver = BoostySolver([])
+    t = time()
+    sol = solver.solve(s)
+    print(f'time elapsed: {time() - t:.4}')
+    print(sol)
     task = Task.parse(s)
-    _, sol, _ = solve(Game(GridTask(task)))
+    score, sol, _ = solve(Game(GridTask(task)))
+    print("score:", score)
     sol = compose_actions(sol)
     print(sol)
     print(len(sol), 'time units')

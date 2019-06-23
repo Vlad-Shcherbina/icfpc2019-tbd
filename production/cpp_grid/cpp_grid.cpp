@@ -5,10 +5,12 @@
 namespace py = pybind11;
 
 #include <functional>
-#include <algorithm>
 #include <vector>
 #include <string>
 #include <sstream>
+
+#include <algorithm>
+#include <utility>
 #include <unordered_map>
 #include <cassert>
 
@@ -173,6 +175,10 @@ public:
     bool operator!=(const CharGrid& other) const {
         return !(*this == other);
     }
+
+    CharGrid copy() {
+        return *this;
+    }
 };
 
 
@@ -228,14 +234,14 @@ void bfs(CharGrid& grid, Pt start, BFS_BaseWalker* walker) {
 
 class PathFinder : public BFS_BaseWalker {
 public:
-    const CharGrid& grid;
+    CharGrid& grid;
     Pt src;
     Pt dest;
     Pt last;
     std::unordered_map<Pt, vector<Pt>> paths;
     vector<Pt> result;
 
-    PathFinder(const CharGrid& grid, Pt src, Pt dest)
+    PathFinder(CharGrid& grid, Pt src, Pt dest)
     : grid(grid)
     , src(src)
     , dest(dest)
@@ -264,6 +270,98 @@ public:
 };
 
 
+
+std::ostream& operator<<(std::ostream& out, Pt p) {
+    out << "(" << p.x << ", " << p.y << ')';
+    return out;
+}
+
+
+class BoostFinder : public BFS_BaseWalker {
+public:
+    CharGrid& grid;
+    CharGrid& wrapped;
+    vector<Pt> border;
+    int countdown;
+    vector<Pt>& boosters;
+    vector<Pt> manips;
+    Pt start;
+    Pt last;
+    Pt candidate;
+    std::unordered_map<Pt, std::pair<float, vector<Pt>>> paths;
+    std::unordered_map<Pt, float> costs;
+    float boost_tradeoff;
+    float wrap_penalty;
+
+    BoostFinder(CharGrid& grid, CharGrid& wrapped,
+                Pt start, vector<Pt> manips,
+                vector<Pt> border, vector<Pt>& boosters,
+                float boost_tradeoff, float wrap_penalty)
+    : grid(grid)
+    , wrapped(wrapped)
+    , border(border)
+    , countdown(border.size())
+    , boosters(boosters)
+    , start(start)
+    , last(start)
+    , boost_tradeoff(boost_tradeoff)
+    , wrap_penalty(wrap_penalty)
+    , manips(manips)
+    , candidate(-1, -1)
+    {
+        paths[start] = std::make_pair(0, vector<Pt>());
+        paths[start].second.push_back(start);
+    }
+
+    bool is_suitable(const Pt& p) override {
+        return grid[p] == '.' 
+            && paths.find(p) == paths.end();
+    }
+
+
+    void run_current(const Pt& p) override {
+        last = p;
+    }
+
+
+    void add_penalty() {
+        for (auto kv : paths) {
+            Pt p = kv.first;
+            for (Pt m : manips) {
+                Pt pm = p + m;
+                if (!wrapped.in_bounds(pm)) continue;
+                if (wrapped[pm] == '.') continue;
+                paths[pm].first += wrap_penalty;
+            }
+
+            if (wrapped[p] == '#') continue;
+            if (candidate == Pt(-1, -1) || paths[p].first < paths[candidate].first) {
+                candidate = p;
+            }
+        }
+    }
+
+
+    void run_neighbour(const Pt& p) override {
+        paths[p].first = paths[last].first + 1;
+        paths[p].second = paths[last].second;
+        paths[p].second.push_back(p);
+
+        if (std::find(boosters.begin(), boosters.end(), p) != boosters.end())
+            paths[p].first -= boost_tradeoff;
+
+        auto b_it = std::find(border.begin(), border.end(), p);
+        if (b_it != border.end()) {
+            countdown -= 1;
+        }
+
+        if (countdown == 0) {
+            add_penalty();
+            stop = true;
+        }
+    }
+
+};
 
 
 // ---------------- BFS walks -----------------------
@@ -296,6 +394,7 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
     py::class_<CharGrid>(m, "CharGrid")
         .def(py::init<int, int>())
         .def(py::init<int, int, char>())
+        .def(py::init<const CharGrid&>())
         .def(py::init<const vector<string>&>())
         .def_property_readonly("width", &CharGrid::get_width)
         .def_property_readonly("height", &CharGrid::get_height)
@@ -324,4 +423,19 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
         return result;
     });
 
+    m.def("boostfind", [](CharGrid& grid,
+                          CharGrid& wrapped,
+                          Pt start,
+                          vector<Pt> manips,
+                          const vector<Pt>& borders,
+                          vector<Pt>& boosts,
+                          float boost_tradeoff,
+                          float wrap_penalty) {
+        BoostFinder* executor = new BoostFinder(grid, wrapped, start, manips, 
+                                    borders, boosts, boost_tradeoff, wrap_penalty);
+        bfs(grid, start, executor);
+        vector<Pt> result = executor->paths[executor->candidate].second;
+        delete executor;
+        return result;
+    });
 }
