@@ -5,9 +5,11 @@
 namespace py = pybind11;
 
 #include <functional>
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <sstream>
+#include <unordered_map>
 
 using std::vector;
 using std::string;
@@ -166,6 +168,50 @@ public:
         return !(*this == other);
     }
 };
+
+
+// ---------------- BFS walks -----------------------
+
+class BFS_BaseWalker {
+public:
+    bool stop;
+
+    BFS_BaseWalker() : stop(false) {}
+
+    virtual void run_current(const Pt& p) = 0;
+    virtual void run_neighbour(const Pt& p) = 0;
+    virtual bool is_suitable(const Pt& p) = 0;
+};
+
+
+
+// NOT TESTED! might be fallacious
+void bfs(CharGrid& grid, Pt start, BFS_BaseWalker* walker) {
+    vector<Pt> frontier = { start };
+    while (frontier.size() > 0) {
+        vector<Pt> new_frontier;
+
+        for (int i = 0; i < frontier.size(); i++) {
+            Pt p = frontier[i];
+            walker->run_current(p);
+            if (walker->stop) return;
+
+            for (Pt d : {Pt(0, 1), Pt(1, 0), Pt(0, -1), Pt(-1, 0)}) {
+                Pt n = p + d;
+                if (!grid.in_bounds(n) || !walker->is_suitable(n)) {
+                    continue;
+                }
+                walker->run_neighbour(n);
+                if (walker->stop) return;
+                new_frontier.push_back(n);
+            }
+        }
+        frontier = new_frontier;
+    }
+}
+
+
+// ---------------- BFS walks -----------------------
 
 
 PYBIND11_MODULE(cpp_grid_ext, m) {
