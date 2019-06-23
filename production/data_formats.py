@@ -227,13 +227,13 @@ class Action:
         return Action(c)
 
     @staticmethod
-    def simple_action(c: str):
+    def simple(c: str):
         'Returns None on failure, for your convenience'
         if c in Action.SIMPLE:
             return Action(c)
 
     @staticmethod
-    def parameterized_action(c: str):
+    def parameterized(c: str):
         'Returns None on failure'
         if param_action_re.match(c):
             return Action(c)
@@ -287,12 +287,12 @@ class Action:
         i = 0
         while i < len(s):
             if s[i] in Action.SIMPLE:
-                actions.append(Action.simple_action(s[i]))
+                actions.append(Action.simple(s[i]))
                 i += 1
             elif s[i] in Action.PARAM:
                 m = param_action_re.match(s, i)
                 assert m, s[i:]
-                actions.append(Action.parameterized_action(m[0]))
+                actions.append(Action.parameterized(m[0]))
                 i = m.end()
             else:
                 assert False, s[i:]

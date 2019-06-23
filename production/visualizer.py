@@ -258,14 +258,14 @@ def interactive(task_number):
                 break
 
             if c in Action.SIMPLE:
-                action = Action.simple_action(c)
+                action = Action.simple(c)
 
             # to perform complex action type it without spaces: B(1,-1)
             elif c in Action.PARAM:
                 while c[-1] != ')':
                     code = display.stdscr.getch()
                     c = c + chr(code).upper()
-                action = Action.parameterized_action(c)
+                action = Action.parameterized(c)
 
             if display.current == 0:
                 botcount = len(game.bots)
