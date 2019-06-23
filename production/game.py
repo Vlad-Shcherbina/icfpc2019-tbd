@@ -12,6 +12,7 @@ class Bot:
     def __init__(self, pos: Pt):
         self.pos = pos
         self.manipulator = [Pt(0, 0), Pt(1, 0), Pt(1, 1), Pt(1, -1)]
+        self.int_direction = 0 # for bookkeeping purposes
         self.world_manipulator = []
         self.wheels_timer = 0
         self.drill_timer = 0
@@ -112,9 +113,11 @@ class Game:
 
         elif act == 'Q':
             bot.manipulator = [p.rotated_ccw() for p in bot.manipulator]
+            bot.int_direction = (bot.int_direction - 1) & 3
 
         elif act == 'E':
             bot.manipulator = [p.rotated_cw() for p in bot.manipulator]
+            bot.int_direction = (bot.int_direction + 1) & 3
 
         elif act in 'LFR':
             if not self.inventory[act]:

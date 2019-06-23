@@ -1,7 +1,7 @@
 import dataclasses
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Set
+from typing import List, Iterator, Tuple, Set
 import re
 
 
@@ -21,7 +21,7 @@ def Pt_parse(s):
     return Pt(int(m.group(1)), int(m.group(2)))
 
 
-def enumerate_grid(grid):
+def enumerate_grid(grid: CharGrid) -> Iterator[Tuple[Pt, str]]:
     'return indices and values in the grid'
     for y in range(grid.height):
         for x in range(grid.width):
