@@ -144,7 +144,16 @@ def trace_poly(cells: Set[Pt]) -> Poly:
 
     assert not d, 'hole or island'
 
-    return poly
+    return poly_without_redundant_vertices(poly)
+
+
+def poly_without_redundant_vertices(poly):
+    result = []
+    for prev, cur, next in zip(poly[-1:] + poly[:-1], poly, poly[1:] + poly[:1]):
+        if prev.x == cur.x == next.x or prev.y == cur.y == next.y:
+            continue
+        result.append(cur)
+    return result
 
 
 def visible(grid : CharGrid, p1: Pt, p2: Pt):

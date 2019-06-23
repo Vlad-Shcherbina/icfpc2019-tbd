@@ -2,6 +2,7 @@
 Interface to Lamda-chain.
 '''
 
+import logging
 import urllib
 import json
 from pprint import pprint
@@ -69,13 +70,13 @@ def get_block_info() -> BlockInfo:
 
 
 def submit(block_number, *, task: str, solution: str):
+    logging.info(f'submitting for block {block_number}')
     url = urllib.parse.urljoin(BLOCKCHAIN_ENDPOINT, 'submit')
     data = {'private_id': PRIVATE_KEY, 'block_num': block_number}
     files = {'solution': ('yo.sol', solution), 'puzzle': ('yo.desc', task)}
     response = requests.post(url, data=data, files=files, allow_redirects=True)
     j = response.json()
-    print(j)
-    # TODO
+    logging.info(str(j))
 
 
 def main():

@@ -29,6 +29,14 @@ def test_trace_poly(cells):
     assert cells == cells2
 
 
+def test_poly_without_redundant_vertices():
+    #      #
+    #    # #
+    poly = [Pt(0, 0), Pt(1, 0), Pt(2, 0), Pt(2, 1), Pt(2, 2), Pt(1, 2), Pt(1, 1), Pt(0, 1)]
+    expected_poly = [Pt(0, 0), Pt(2, 0), Pt(2, 2), Pt(1, 2), Pt(1, 1), Pt(0, 1)]
+    assert poly_without_redundant_vertices(poly) == expected_poly
+
+
 def test_visibility():
     # Corner of 11th task
     #   012345678

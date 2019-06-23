@@ -1,5 +1,11 @@
 import logging
+if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(levelname).1s %(asctime)s %(module)10.10s:%(lineno)-4d %(message)s')
 logger = logging.getLogger(__name__)
+
+import time
 import zlib
 import json
 from typing import Optional
@@ -7,6 +13,9 @@ from typing import Optional
 from production import db
 from production import utils
 from production import lambda_chain
+from production.data_formats import *
+from production.golden import validate
+from production import puzzle_solver
 
 
 def find_best_solution(conn, problem_name) -> Optional[str]:
@@ -56,26 +65,43 @@ def upload_current_task(conn, block):
 def main():
     conn = db.get_conn()
 
-    block = lambda_chain.get_block_info()
+    while True:
+        block = lambda_chain.get_block_info()
 
-    upload_current_task(conn, block)
-    sol = find_best_solution(conn, f'block-{block.number:04d}')
+        upload_current_task(conn, block)
 
-    age = block.age_in_seconds
-    logging.info(f'block {block.number} age {age}s')
-    # TODO: only submit for old enough blocks
+        f = utils.project_root() / 'outputs' / f'block-{block.number:04d}.cond'
+        f.write_text(block.puzzle)
+        logging.info(f'Block puzzle saved to {f}')
 
-    if sol is not None:
-        task = TODO
-        lambda_chain.submit(block.number, solution=sol, task=task)
+        task = puzzle_solver.solve(Puzzle.parse(block.puzzle))
+        task = str(task)
+        logging.info(f'Validating puzzle solution...')
+        result = validate.puz(block.puzzle, task)
+        logging.info(result)
+        assert result == 'ok'
+
+        block_submitted = False
+        while True:
+            new_block = lambda_chain.get_block_info()
+            logging.info(f'block age: {int(new_block.age_in_seconds)}s')
+            if new_block.number != block.number:
+                logging.info('new block appeared   ' + '-' * 30)
+                break
+
+            if not block_submitted:
+                sol = find_best_solution(conn, f'block-{block.number:04d}')
+                if sol is not None:
+                    lambda_chain.submit(block.number, solution=sol, task=task)
+                    block_submitted = True
+
+            logging.info('waiting...')
+            db.record_this_invocation(conn, status=db.KeepRunning(60))
+            conn.commit()
+            time.sleep(10)
 
 
 if __name__ == '__main__':
-    import logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(levelname).1s %(module)10.10s:%(lineno)-4d %(message)s')
-
     from importlib.util import find_spec
     if find_spec('hintcheck'):
         import hintcheck

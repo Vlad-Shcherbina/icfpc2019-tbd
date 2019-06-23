@@ -22,6 +22,14 @@ class Puzzle:
     include: List[Pt]
     omit:    List[Pt]
 
+    @property
+    def min_vertices(self):
+        return self.vertices['min']
+
+    @property
+    def max_vertices(self):
+        return self.vertices['max']
+
     def __str__(self):
         def render(x):
             out = []
