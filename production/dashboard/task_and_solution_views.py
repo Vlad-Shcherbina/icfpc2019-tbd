@@ -115,7 +115,7 @@ def list_solutions():
             solutions.extra
         FROM tasks
         LEFT OUTER JOIN solutions ON solutions.task_id = tasks.id
-        WHERE tasks.name SIMILAR TO %s
+        WHERE tasks.name SIMILAR TO %s AND solutions.status != 'PASS'
         ORDER BY tasks.id {'DESC' if rev else 'ASC'}, solutions.id DESC
     ''', [name_filter])
     rows = cur.fetchall()
