@@ -54,6 +54,8 @@ class Game:
 
         self.update_wrapped()
 
+    def map_contains_booster(self, code):
+        return any(code == b.code for b in self.boosters)
 
     @property
     def remaining_unwrapped(self):
