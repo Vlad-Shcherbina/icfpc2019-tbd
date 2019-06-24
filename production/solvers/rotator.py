@@ -128,9 +128,9 @@ class RotatorSolver(Solver):
 
 
 def main():
-    s = Path(utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01.desc').read_text()
+    s = Path(utils.project_root() / 'tasks' / 'part-1-initial' / 'prob-002.desc').read_text()
     task = Task.parse(s)
-    sol = solve(task)
+    _, sol, _ = solve(task, '')
     sol = compose_actions(sol)
     print(sol)
     print(len(sol), 'time units')

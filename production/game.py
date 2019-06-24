@@ -27,6 +27,7 @@ class Game:
         self.width = task.width
         self.bots = [Bot(task.start)]
 
+        self.pending_boosters = []
         self.inventory = Counter()
         self.boosters = [b for b in task.boosters if b.code != 'X']
         self.clone_spawn = [b.pos for b in task.boosters if b.code == 'X']
@@ -86,18 +87,22 @@ class Game:
 
         # you should always call the zero's bot action explicitely,
         # even if it's Z, since he counts turns
+        
         act = action.s
         bot = self.bots[bot_index]
 
-        booster = [b for b in self.boosters if b.pos == bot.pos]
-        if booster:
-            [booster] = booster
-            if booster.code in Booster.CODES:
-                self.inventory.update([booster.code])
-                self.boosters.remove(booster)
+        def get_booster(x):
+            b, t, i = x
+            if self.turn > t + 2 or self.turn == t + 1 and i >= bot_index:
+                self.inventory.update([b])
+                return False
+            return True
+
+        self.pending_boosters = [x for x in self.pending_boosters if get_booster(x)]
 
         if act in 'WSAD':
             for step in range(2 if bot.wheels_timer else 1):
+
                 np = bot.pos + action.WSAD2DIR[act]
                 if not self.in_bounds(np):
                     raise InvalidActionException('Can\'t move out of map boundary')
@@ -116,6 +121,13 @@ class Game:
                         raise InvalidActionException(f'Can\'t move into a tile: {target!r}')
 
                 bot.pos = np
+                booster = [b for b in self.boosters if b.pos == bot.pos]
+                if booster:
+                    [booster] = booster
+                    if booster.code in Booster.CODES:
+                        self.pending_boosters.append((booster.code, self.turn, bot_index))
+                        # self.inventory.update([booster.code])
+                        self.boosters.remove(booster)
                 self.update_wrapped()
 
         elif act == 'Z':
