@@ -81,7 +81,7 @@ namespace std
 
 
 // this can't be injected in std
-const string to_string(const Pt & p) {
+inline const string to_string(const Pt & p) {
     return string("(" + std::to_string(p.x) + "," + std::to_string(p.y) + ")");
 }
 
@@ -186,3 +186,7 @@ public:
         return *this;
     }
 };
+
+using CharGrid = Grid<char>;
+using ByteGrid = Grid<uint8_t>; // unsigned
+using IntGrid = Grid<int>;

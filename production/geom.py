@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import List, Iterator, Tuple, Set
 import re
 
+from production.cpp_grid.cpp_grid_ext import visible as visible_cpp
+
 
 '''
 IMPORTANT: we write Pt(x, y), but grid[y][x] for various grids. Such is life.
@@ -156,7 +158,7 @@ def poly_without_redundant_vertices(poly):
     return result
 
 
-def visible(grid : CharGrid, p1: Pt, p2: Pt):
+def visible_py(grid : CharGrid, p1: Pt, p2: Pt):
     dist = (p2 - p1)
     divider = (abs(dist.x) + abs(dist.y)) * 2 + 1
     move = (dist.x / divider, dist.y / divider)
@@ -174,6 +176,13 @@ def visible(grid : CharGrid, p1: Pt, p2: Pt):
         if p == p2:
             return True
     return True
+
+
+def visible(grid : CharGrid, p1: Pt, p2: Pt):
+    a = visible_py(grid, p1, p2)
+    b = visible_cpp(grid, p1, p2)
+    assert a == b
+    return b
 
 
 if __name__ == '__main__':

@@ -19,10 +19,6 @@ namespace py = pybind11;
 using std::vector;
 using std::string;
 
-using CharGrid = Grid<char>;
-using ByteGrid = Grid<uint8_t>; // unsigned
-using IntGrid = Grid<int>;
-
 // ---------------- BFS walks -----------------------
 
 class BFS_BaseWalker {
@@ -236,6 +232,7 @@ void register_grid(py::module &m, const char * name) {
         ;
 }
 
+void init_game_util_bindings(py::module &m);
 
 PYBIND11_MODULE(cpp_grid_ext, m) {
     m.doc() = "pybind11 mine grid";
@@ -288,4 +285,6 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
         delete executor;
         return result;
     });
+
+    init_game_util_bindings(m);
 }

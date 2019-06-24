@@ -1,5 +1,10 @@
 import logging
+if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(levelname).1s %(module)10.10s:%(lineno)-4d %(message)s')
 logger = logging.getLogger(__name__)
+
 from pathlib import Path
 from typing import List, Tuple
 
@@ -108,11 +113,6 @@ def main():
 
 
 if __name__ == '__main__':
-    import logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(levelname).1s %(module)10.10s:%(lineno)-4d %(message)s')
-
     from importlib.util import find_spec
     if find_spec('hintcheck'):
         import hintcheck
