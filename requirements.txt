@@ -9,3 +9,4 @@ json-rpc
 jsonrpc-requests
 cachetools
 requests
+gprof2dot

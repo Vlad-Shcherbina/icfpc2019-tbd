@@ -5,8 +5,9 @@ from typing import List, Tuple, Optional
 
 from production import utils
 from production.data_formats import *
-from production.geom import poly_bb, rasterize_poly, visible
 from production.solvers.interface import *
+from production.geom import poly_bb, rasterize_poly
+from production.cpp_grid.cpp_grid_ext import visible
 from production.game import Game
 from production.solvers.greedy import GreedySolver
 
