@@ -173,8 +173,10 @@ class Display:
             char(c, 'X', FgColors.Spot)
 
         for b in game.bots:
-            for m in b.world_manipulator:
-                char(m, '*', FgColors.Manipulator)
+            for m in bot.manipulator:
+                w = b.pos + m
+                if m.in_bounds(w) and geom.visible(self.grid, b.pos, w):
+                    char(m, '*', FgColors.Manipulator)
 
         for b in game.bots:
             char(b.pos, '@', FgColors.InactivePlayer)

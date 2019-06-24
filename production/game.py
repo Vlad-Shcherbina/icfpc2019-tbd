@@ -2,7 +2,7 @@ from typing import Optional
 from collections import Counter
 from production.data_formats import GridTask, Action, Pt, Pt_parse, CharGrid, ByteGrid, Booster, enumerate_grid
 from production import geom
-
+from production.cpp_grid.cpp_grid_ext import manipulators_will_wrap
 
 class InvalidActionException(Exception):
     pass
@@ -13,7 +13,6 @@ class Bot:
         self.pos = pos
         self.manipulator = [Pt(0, 0), Pt(1, 0), Pt(1, 1), Pt(1, -1)]
         self.int_direction = 0 # for bookkeeping purposes
-        self.world_manipulator = []
         self.wheels_timer = 0
         self.drill_timer = 0
         self.actions = []
@@ -66,18 +65,12 @@ class Game:
         return Pt(self.width, self.height)
 
 
-    def recalc_manipulator(self, bot):
-        m = (p + bot.pos for p in bot.manipulator)
-        bot.world_manipulator = [p for p in m
-            if self.in_bounds(p)
-            and geom.visible(self.grid, bot.pos, p)
-        ]
-
-
     def update_wrapped(self):
         for bot in self.bots:
-            self.recalc_manipulator(bot)
-            self._remaining_unwrapped -= self._wrapped.update_values(bot.world_manipulator, 1)
+            delta = manipulators_will_wrap(self.grid, self._wrapped, bot.pos, bot.manipulator)
+            num_changed = self._wrapped.update_values(delta, 1)
+            assert num_changed == len(delta)
+            self._remaining_unwrapped -= num_changed
 
 
     def is_wrapped(self, p):
