@@ -10,9 +10,10 @@ from typing import List, Tuple
 
 from production import utils
 from production.data_formats import *
-from production.geom import poly_bb, rasterize_poly, visible
+from production.geom import poly_bb, rasterize_poly
 from production.solvers.interface import *
 from production.game import Game
+from production.cpp_grid.cpp_grid_ext import manipulators_will_wrap
 
 
 def solve(task: Task) -> Tuple[int, List[List[Action]], dict]:
@@ -31,14 +32,7 @@ def solve(task: Task) -> Tuple[int, List[List[Action]], dict]:
             best_rank = 0
             dst = None
             for p in frontier:
-                rank = 0
-                for m in game.bots[0].manipulator:
-                    q = p + m
-                    if (game.in_bounds(q) and
-                        game.grid[q] == '.' and
-                        not game.is_wrapped(q) and
-                        visible(game.grid, q, p)):
-                        rank += 1
+                rank = len(manipulators_will_wrap(game.grid, game._wrapped, p, game.bots[0].manipulator))
                 if rank > best_rank:
                     best_rank = rank
                     dst = p

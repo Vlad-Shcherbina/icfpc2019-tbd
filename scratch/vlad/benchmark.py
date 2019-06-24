@@ -22,12 +22,8 @@ if __name__ == '__main__':
     solver = RotatorSolver([])
 
     start = time.time()
-
-    #result = solver.solve(task)
-    result = cProfile.run('solver.solve(task)', profile_path)
-
+    cProfile.run('solver.solve(task)', profile_path)
     logging.info(f'it took {time.time() - start}s')
-    logging.info(result)
 
     subprocess.check_call(
         f'gprof2dot -f pstats -n 2 {profile_path} | dot -Tpng -o {callgraph_path}', shell=True)

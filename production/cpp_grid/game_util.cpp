@@ -31,7 +31,22 @@ bool visible(const CharGrid &grid, Pt p1, Pt p2) {
     assert(false);
 }
 
+vector<Pt> manipulators_will_wrap(
+        const CharGrid &grid,
+        const ByteGrid &wrapped,
+        Pt worker_pos, const vector<Pt> &manips) {
+    vector<Pt> result;
+    for (Pt m : manips) {
+        Pt pt = worker_pos + m;
+        if (grid.in_bounds(pt) && !wrapped[pt] && visible(grid, worker_pos, pt)) {
+            result.push_back(pt);
+        }
+    }
+    return result;
+}
+
 
 void init_game_util_bindings(py::module &m) {
     m.def("visible", &visible);
+    m.def("manipulators_will_wrap", &manipulators_will_wrap);
 }
