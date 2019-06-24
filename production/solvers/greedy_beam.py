@@ -10,7 +10,7 @@ from production import utils
 from production.data_formats import *
 from production.geom import poly_bb, rasterize_poly, visible
 from production.solvers.interface import *
-from production.game import Game, InvalidActionException
+from production.game import Game, BacktrackingGame, InvalidActionException
 
 
 def bfs_extract_path(node, visited):
@@ -22,7 +22,7 @@ def bfs_extract_path(node, visited):
     return path
 
 
-def find_nearest_unwrapped(game: Game, pos: Pt) -> Tuple[Pt, dict]:
+def find_nearest_unwrapped(game: Union[Game, BacktrackingGame], pos: Pt) -> Tuple[Pt, dict]:
     # bfs until we find an unwrapped cell, return it and visited
     sentinel = object()
     front = deque([pos, sentinel])
@@ -55,11 +55,11 @@ def find_nearest_unwrapped(game: Game, pos: Pt) -> Tuple[Pt, dict]:
 def calculate_distance_field(game: Game, target: Pt, visited):
     # Calculate and return a distance field from the target, over visited cells only
     sentinel = object()
-    generation = 0
     target_generation = len(bfs_extract_path(target, visited))
     # path = [0, 1]; target_generation = 2, break when greater.
     front = deque([target, sentinel])
-    distfield = {target: generation}
+    distfield = {target: 0}
+    generation = 1
     while front:
         p = front.popleft()
         if p == sentinel:
@@ -80,10 +80,18 @@ def calculate_distance_field(game: Game, target: Pt, visited):
 
 
 def get_action(game: Game, max_depth: int):
+    global prev_unwrapped, prev_d
+    game = BacktrackingGame(game, game.bots[0])
     t = time.perf_counter()
-    target, visited = find_nearest_unwrapped(game, game.bots[0].pos)
+    target, visited = find_nearest_unwrapped(game, game.bot.pos)
     distfield = calculate_distance_field(game, target, visited)
-    distance_to_target = target.manhattan_dist(game.bots[0].pos)
+    distance_to_target = target.manhattan_dist(game.bot.pos)
+
+    # print(game.bots[0].pos, target)
+    # g = CharGrid(game.height, game.width, '.')
+    # for p, d in distfield.items():
+    #     g[p] = chr(ord('0') + d)
+    # print(g.grid_as_text())
 
     if distance_to_target > 5:
         # HACK: in large wrapped spaces don't think too hard
@@ -91,11 +99,6 @@ def get_action(game: Game, max_depth: int):
 
     oldt, t = t, time.perf_counter()
     logging.info(f'turn={game.turn} unwrapped={game.remaining_unwrapped} found target d={distance_to_target} and computed distfield in {t - oldt:0.3f}')
-
-    def apply_action(game: Game, action: Action):
-        game = deepcopy(game)
-        game.apply_action(action)
-        return game
 
     scores = {}
     best_score, best_action = -99999, None
@@ -124,6 +127,16 @@ def get_action(game: Game, max_depth: int):
         if not success:
             score += distfield[bot.pos] * delay_penalty
 
+        # hack: collect boosters
+        # booster = [b for b in game.boosters if b.pos == bot.pos]
+        # if booster:
+        #     [booster] = booster
+        #     print(booster)
+        #     assert False
+        #     if booster.code in 'B':
+        #         score += 1000
+        #         success = True
+
         key = (bot.pos, bot.int_direction)
 
         if key in scores and scores[key] > score:
@@ -140,9 +153,9 @@ def get_action(game: Game, max_depth: int):
         for dp, action in Action.DIRS.items():
             # never move backward, also means we never run into walls
             if distfield.get(bot.pos + dp, 99999) <= distfield[bot.pos]:
-                recur(apply_action(game, action), depth + 1, first_action if first_action else action)
-        recur(apply_action(game, Action.turnCW()), depth + 1, first_action if first_action else Action.turnCW())
-        recur(apply_action(game, Action.turnCCW()), depth + 1, first_action if first_action else Action.turnCCW())
+                recur(game.apply_action(action), depth + 1, first_action if first_action else action)
+        recur(game.apply_action(Action.turnCW()), depth + 1, first_action if first_action else Action.turnCW())
+        recur(game.apply_action(Action.turnCCW()), depth + 1, first_action if first_action else Action.turnCCW())
     recur(game)
     oldt, t = t, time.perf_counter()
     logging.info(f'{best_action} {best_score}; evaluated {nodes_evaluated} nodes in {t - oldt:0.3f}')
@@ -189,7 +202,8 @@ class GreedyBeamSolver(Solver):
 
 def main():
     problem = 11
-    sol = GreedySolver([]).solve(utils.get_problem_raw(problem))
+    sol = GreedyBeamSolver([]).solve(utils.get_problem_raw(problem))
+    print(sol.extra)
     sol = sol.data
     print(len(sol), 'time units')
     sol_path = Path(utils.project_root() / 'outputs' / f'beam-{problem}.sol')

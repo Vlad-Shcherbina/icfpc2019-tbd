@@ -248,8 +248,8 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
         .def("rotated_cw", &Pt::rotated_cw)
         .def("rotated_ccw", &Pt::rotated_ccw)
         .def("manhattan_dist", &Pt::manhattan_dist)
-        .def("__str__", [](const Pt & p) { return to_string(p); })
-        .def("__repr__", [](const Pt & p) { return "Pt" + to_string(p); })
+        .def("__str__", [](const Pt & p) { return my_to_string(p); })
+        .def("__repr__", [](const Pt & p) { return "Pt" + my_to_string(p); })
         .def("__hash__", [](const Pt & p) { return p.hash(); })
         // we are immutable so return self as copy
         .def("__copy__", [](const Pt & p) { return p; })

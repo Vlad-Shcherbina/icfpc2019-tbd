@@ -80,9 +80,20 @@ namespace std
 }
 
 
-// this can't be injected in std
-inline const string to_string(const Pt & p) {
+inline const string my_to_string(const Pt & p) {
     return string("(" + std::to_string(p.x) + "," + std::to_string(p.y) + ")");
+}
+
+inline const string my_to_string(char x) {
+    return string(1, x);
+}
+
+inline const string my_to_string(uint8_t x) {
+    return std::to_string(x);
+}
+
+inline const string my_to_string(int x) {
+    return std::to_string(x);
 }
 
 
@@ -140,7 +151,7 @@ public:
         if (in_bounds(pos)) {
             return data[pos.y * width + pos.x];
         }
-        throw pybind11::index_error("index=" + to_string(pos) + ", width_height=" + to_string(Pt(width, height)));
+        throw pybind11::index_error("index=" + my_to_string(pos) + ", width_height=" + my_to_string(Pt(width, height)));
     }
 
 
@@ -167,7 +178,7 @@ public:
             if (row != 0) res += '\n';
             for (int col = 0; col < width; col++) {
                 if (col != 0) res += ' ';
-                res += (*this)[Pt(col, row)];
+                res += my_to_string((*this)[Pt(col, row)]);
             }
         }
         return res;
