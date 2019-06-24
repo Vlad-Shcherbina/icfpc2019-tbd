@@ -114,6 +114,8 @@ def solve(game: Game, params: dict) -> Tuple[Optional[int], List[List[Action]], 
     cnt = 0
 
     params['booster_count'] = sum(1 for b in game.boosters if b.code == 'B')
+    map_center = Pt(game.grid.width // 2, game.grid.height // 2)
+    teleport_list = []
 
     while not game.finished():
         cnt += 1
@@ -148,6 +150,11 @@ def solve(game: Game, params: dict) -> Tuple[Optional[int], List[List[Action]], 
                 break
 
             new_frontier = []
+            if depth == 0 and 'R' in params['boostlist']:
+                new_frontier = teleport_list[:]
+                for p in new_frontier:
+                    prev[p] = bot.pos
+
             for p in frontier:
                 for d in Action.DIRS.keys():
                     p2 = p + d
@@ -165,12 +172,24 @@ def solve(game: Game, params: dict) -> Tuple[Optional[int], List[List[Action]], 
         assert dst is not None
         assert dst != bot.pos
 
+        # teleport
+        if 'R' in params['boostlist'] and game.inventory['R'] > 0:
+            if map_center.manhattan_dist(bot.pos) < map_center.manhattan_dist(dst):
+                game.apply_action(Action.reset())
+                logger.info('reset teleport')
+                teleport_list.append(bot.pos)
+
         # gathering path
         path = []
         p = dst
-        while p != game.bots[0].pos:
+        while p != bot.pos:
             d = p - prev[p]
-            path.append(Action.DIRS[d])
+            if d not in Action.DIRS.keys():
+                assert 'R' in params['boostlist'] and p in teleport_list
+                path.append(Action.teleport(p.x, p.y))
+                logger.info('teleport away')
+            else:
+                path.append(Action.DIRS[d])
             p = prev[p]
             assert p is not None
         path.reverse()
@@ -182,6 +201,7 @@ def solve(game: Game, params: dict) -> Tuple[Optional[int], List[List[Action]], 
         if params['best score'] is not None and game.turn >= params['best score']:
             return None, [], {}
 
+        # boosters
         if game.inventory['B'] > 0:
             logger.info('attach extension')
             params['attach func'](game, params, 0)
@@ -189,6 +209,7 @@ def solve(game: Game, params: dict) -> Tuple[Optional[int], List[List[Action]], 
         if 'L' in params['boostlist'] and game.inventory['L'] > 0:
             logger.info('use drill')
             game.apply_action(Action.drill())
+
 
 
     score = game.finished()
@@ -207,12 +228,14 @@ manip_configs = { 'lined' : attach_lined, 'squared' : attach_squared }
 class TweakerSolver(Solver):
 
     ''' args:
-        manipconf: [lined | squared] - lined if none
-        driller: [drill | no-drill]  - drill if none
+        manipconf: [lined | squared] - lined if omitted
+        driller: [drill | no-drill]  - drill if omitted
+        teleport: [teleport | no-teleport] - teleport if omitted
     ''' 
     def __init__(self, args: List[str]):
         self.manipconf = 'lined'
         self.drill = True
+        self.teleport = True
 
         if len(args) >= 1:
             assert args[0] in manip_configs.keys(), args[0]
@@ -220,12 +243,16 @@ class TweakerSolver(Solver):
         if len(args) >= 2:
             assert args[1] in ('drill', 'no-drill'), args[1]
             self.drill = args[1] == 'drill'
+        if len(args) >= 3:
+            assert args[2] in ('teleport', 'no-teleport')
+            self.teleport = args[2] == 'teleport'
 
 
     def scent(self) -> str:
         return ('tweaker 1 ' 
                 + self.manipconf
-                + (' drill' if self.drill else ''))
+                + (' drill' if self.drill else '')
+                + (' teleport' if self.teleport else ''))
 
     def solve(self, task: str) -> SolverResult:
         task = Task.parse(task)
@@ -242,6 +269,8 @@ class TweakerSolver(Solver):
         params['boostlist'] = 'B'
         if self.drill:
             params['boostlist'] += 'L'
+        if self.teleport:
+            params['boostlist'] += 'R'
 
         params['attach func'] = manip_configs[self.manipconf]
 
@@ -254,6 +283,7 @@ class TweakerSolver(Solver):
                 game.apply_action(t)
 
             expected_score, actions, extra = solve(game, params)
+            logger.info(f'{direction} finished with {expected_score} score')
             if expected_score is None:
                 # solution has exceeded the best score and stopped
                 continue
@@ -270,13 +300,12 @@ class TweakerSolver(Solver):
 # -------------------------- main ---------------------------------
 
 def main():
-    s = Path(utils.project_root() / 'tasks' / 'part-1-initial' / 'prob-100.desc').read_text()
+    s = Path(utils.project_root() / 'tasks' / 'part-2-teleports' / 'prob-213.desc').read_text()
 
-    args_options = (['squared', 'drill'],
-                    ['lined', 'drill'],
-                    ['squared', 'no-drill'],
-
-                    ['lined', 'no-drill'])
+    args_options = (['squared', 'drill', 'teleport'],
+                    ['squared', 'no-drill', 'teleport'],
+                    ['squared', 'drill'],
+                    ['squared', 'no-drill'])
 
     bestscore = None
     bestoption = None
@@ -287,7 +316,7 @@ def main():
         if bestscore is None or bestscore > sol.expected_score:
             bestscore, bestoption = sol.expected_score, arg
     print('\n: best option was ', bestoption, '\n')
-    sol_path = Path(utils.project_root() / 'outputs' / 'prob-xxx-tweaker.sol')
+    sol_path = Path(utils.project_root() / 'outputs' / 'prob-ttt-tweaker.sol')
     sol_path.write_text(sol.data)
     print('result saved to', sol_path)
 
