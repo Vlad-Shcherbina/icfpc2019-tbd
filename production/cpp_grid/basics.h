@@ -97,8 +97,6 @@ inline const string my_to_string(int x) {
 }
 
 
-using RevertInfo = vector<pair<Pt, int>>;
-
 template<typename T>
 class Grid {
     int height;
@@ -174,31 +172,6 @@ public:
     }
 
     
-    int update_values_from_revert(const RevertInfo & values) {
-        int updated = 0;
-        for (auto it : values) {
-            if ((*this)[it->first] != it->second) {
-                (*this)[it->first] = it->second;
-                updated++;
-            }
-        }
-        return updated;
-    }
-    
-    
-    RevertInfo update_values_returning(const std::vector<Pt> & points, T value) {
-        RevertInfo r;
-        for (auto p : points) {
-            auto & ref = (*this)[p];
-            if (ref != value) {
-                r.emplace_back(p, ref);
-                ref = value;
-            }
-        }
-        return r;
-    }
-
-
     string grid_as_text() const {
         string res;
         for (int row = 0; row < height; row++) {

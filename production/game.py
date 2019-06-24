@@ -59,6 +59,10 @@ class Game:
         return self.grid.in_bounds(p)
 
 
+    def is_passable(self, p: Pt):
+        return self.grid[p] == '.'
+
+
     def enumerate_grid(self):
         return enumerate_grid(self.grid)
 
@@ -207,8 +211,9 @@ class BacktrackingGame:
         self.game = game
 
         self.bot = copy(bot)
-        self.wrapped = game._wrapped.copy() # better copy one time than try to ensure full rollback
+        self._wrapped = game._wrapped.copy() # better copy one time than try to ensure full rollback
         self.remaining_unwrapped = game.remaining_unwrapped
+        self.turn = game.turn
 
         # A super-clever way to provide an immutable interface on top of mutable implementation with
         # zero overhead in backtracking usecase.
@@ -217,18 +222,21 @@ class BacktrackingGame:
         self._reverted = False
 
 
-    def _create_child(self, revert):
+    def _create_child(self, bot, revert):
         # bypass __init__
         child = self._child = BacktrackingGame.__new__(BacktrackingGame)
 
         child.game = self.game
-        child.bot = self.bot
-        child.wrapped = self.wrapped
+        child.bot = bot
+        child._wrapped = self._wrapped
         child.remaining_unwrapped = self.remaining_unwrapped
+        child.turn = self.turn + 1
 
         child._child = None
         child._revert_action = revert
         child._reverted = False
+
+        return child
 
 
     def _activate(self):
@@ -248,7 +256,7 @@ class BacktrackingGame:
         self._activate()
 
         act = action.s
-        bot = self.bot
+        bot = copy(self.bot)
 
         if act in 'WSAD':
             revert_infos = []
@@ -257,7 +265,7 @@ class BacktrackingGame:
                 if not self.in_bounds(np):
                     raise InvalidActionException('Can\'t move out of map boundary')
 
-                target = self.grid[np]
+                target = self.game.grid[np]
                 if target != '.': # don't support drilling
                     if not step:
                         raise InvalidActionException(f'Can\'t move into a tile: {target!r}')
@@ -267,20 +275,25 @@ class BacktrackingGame:
                 bot.pos = np
                 revert_infos.append(self.update_wrapped())
             revert_infos.reverse()
-            return _init_child(lambda: [self.update_wrapped(r) for r in revert_infos])
+            return self._create_child(bot, lambda: [self.revert_update_wrapped(r) for r in revert_infos])
 
         elif act in 'QE':
             direction = -1 if act == 'Q' else 1
             bot.rotate(direction)
             revert_info = self.update_wrapped()
-            return _init_child(lambda: (bot.rotate(-direction), self.update_wrapped(revert_info)))
+            return self._create_child(bot, lambda: self.revert_update_wrapped(revert_info))
 
         else:
             raise InvalidActionException(f'Unsupported action {action}')
 
+        # don't update bot timeouts and stuff
 
     def in_bounds(self, p: Pt):
         return self.game.grid.in_bounds(p)
+
+
+    def is_passable(self, p: Pt):
+        return self.game.grid[p] == '.'
 
 
     def enumerate_grid(self):
@@ -292,10 +305,16 @@ class BacktrackingGame:
 
 
     def update_wrapped(self):
-        delta = manipulators_will_wrap(self.grid, self._wrapped, bot.pos, bot.manipulator)
+        delta = manipulators_will_wrap(self.game.grid, self._wrapped, self.bot.pos, self.bot.manipulator)
         num_changed = self._wrapped.update_values(delta, 1)
         assert num_changed == len(delta)
-        self._remaining_unwrapped -= num_changed
+        self.remaining_unwrapped -= num_changed
+        return delta
+
+
+    def revert_update_wrapped(self, delta):
+        self._wrapped.update_values(delta, 0)
+        self.remaining_unwrapped += len(delta)
 
 
     def is_wrapped(self, p):

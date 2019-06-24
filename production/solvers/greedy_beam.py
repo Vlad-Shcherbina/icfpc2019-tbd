@@ -44,7 +44,7 @@ def find_nearest_unwrapped(game: Union[Game, BacktrackingGame], pos: Pt) -> Tupl
             p2 = p + d
             if (    p2 not in visited
                     and game.in_bounds(p2)
-                    and game.grid[p2] == '.'):
+                    and game.is_passable(p2)):
                 visited[p2] = p
                 if not game.is_wrapped(p2):
                     found = p2
@@ -52,7 +52,7 @@ def find_nearest_unwrapped(game: Union[Game, BacktrackingGame], pos: Pt) -> Tupl
     return None, visited
 
 
-def calculate_distance_field(game: Game, target: Pt, visited):
+def calculate_distance_field(target: Pt, visited):
     # Calculate and return a distance field from the target, over visited cells only
     sentinel = object()
     target_generation = len(bfs_extract_path(target, visited))
@@ -84,7 +84,7 @@ def get_action(game: Game, max_depth: int):
     game = BacktrackingGame(game, game.bots[0])
     t = time.perf_counter()
     target, visited = find_nearest_unwrapped(game, game.bot.pos)
-    distfield = calculate_distance_field(game, target, visited)
+    distfield = calculate_distance_field(target, visited)
     distance_to_target = target.manhattan_dist(game.bot.pos)
 
     # print(game.bots[0].pos, target)
@@ -109,7 +109,7 @@ def get_action(game: Game, max_depth: int):
         nonlocal nodes_evaluated, best_score, best_action
         nodes_evaluated += 1
 
-        bot = game.bots[0]
+        bot = game.bot
 
         success = game.is_wrapped(target)
         delay_penalty = -2
@@ -128,11 +128,10 @@ def get_action(game: Game, max_depth: int):
             score += distfield[bot.pos] * delay_penalty
 
         # hack: collect boosters
-        # booster = [b for b in game.boosters if b.pos == bot.pos]
+        # booster = [b for b in game.game.boosters if b.pos == bot.pos]
         # if booster:
         #     [booster] = booster
         #     print(booster)
-        #     assert False
         #     if booster.code in 'B':
         #         score += 1000
         #         success = True
