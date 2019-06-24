@@ -24,19 +24,6 @@ BOOST_TRADEOFF = 5
 SEARCH_RADIUS = 5
 ALLOWED = 'B'
 
-class timecount:
-    def __init__(self):
-        self.sum = 0
-        self.count = 0
-
-    def add(self, time):
-        self.sum += time
-        self.count += 1
-
-    def result(self):
-        return self.sum / self.count
-
-
  #    o
  # ~~~~~~  <- symmetrical attach
 def attach_manip(game: Game, bot_area, botindex = 0):
@@ -72,23 +59,16 @@ def update_wrapped(grid: CharGrid, wrapped: CharGrid, bot):
 
 
 def is_frontier(p: Pt, grid, wrapped):
-    # print('-----', p, ' : ', end='')
     if not grid.in_bounds(p):
-        # print('--- not in bounds')
         return False
-    # if grid[p] == '#':
-    #     print('--- wall')
-    #     return False
 
     if wrapped[p] != '.':
-        # print('--- wrapped')
         return False
 
     count = {'.' : 0, '+' : 0, '#' : 0}
     for d in [Pt(0, 0)] + list(Action.DIRS.keys()):
         if wrapped.in_bounds(p + d):
             count[wrapped[p + d]] += 1
-    # print(f'--- {count["."]}, {count["+"]}')
     return count['.'] > 0 and count['+'] > 0
 
 
@@ -119,10 +99,6 @@ def solve(game, bestscore=None) -> Tuple[Optional[int], List[List[Action]], dict
             frontier.append(bot.pos + m)
     frontier = clean_frontier(frontier, game, wrapped)
 
-    # t1time = timecount()
-    # t3time = timecount()
-    # t2time = timecount()
-
     def remove(f, rm):
         for i in range(len(f)):
             if f[i] == rm:
@@ -131,24 +107,16 @@ def solve(game, bestscore=None) -> Tuple[Optional[int], List[List[Action]], dict
                 return
 
     while not game.finished():
-        # t1 = time()
         cnt += 1
         if cnt % 1000 == 0:
             logging.info(f'{game.remaining_unwrapped} unwrapped')
 
         boosts = [b.pos for b in game.boosters if b.code in ALLOWED]
         penalty = (game.grid.height + game.grid.width) * 2
-        # t2 = time()
 
         path = boostfind(game.grid, wrapped, bot.pos, bot.manipulator,
                          frontier, boosts, BOOST_TRADEOFF, penalty)
-        # t2time.add(time() - t2)
 
-        # print(wrapped)
-        # print()
-        # print(bot.pos)
-
-        # print("path: ", path)
         assert len(path) > 1
         if len(path) > 2:
             path.pop()
@@ -165,8 +133,6 @@ def solve(game, bestscore=None) -> Tuple[Optional[int], List[List[Action]], dict
             logger.info('attach extension')
             attach_manip(game, bot_area, 0)
 
-        # print("FR before: ", frontier)
-        # t3 = time()
         checked = []
         for p in path:
             for m in bot_area:
@@ -182,12 +148,6 @@ def solve(game, bestscore=None) -> Tuple[Optional[int], List[List[Action]], dict
                 checked.append(pm)
 
         remove(frontier, bot.pos)
-        # t3time.add(time() - t3)
-        # t1time.add(time() - t1)
-
-        # print("FR after: ", frontier)
-
-        # print(f'overall: {t1time.result():.4} cpp: {t2time.result():.4} front: {t3time.result():.4} len: {len(frontier)}')
 
     score = game.finished()
     logger.info(game.inventory)
