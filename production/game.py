@@ -19,6 +19,15 @@ class Bot:
         self.actions = []
 
 
+    def rotate(self, direction: int):
+        if direction > 0:
+            self.manipulator = [p.rotated_cw() for p in self.manipulator]
+        else:
+            self.manipulator = [p.rotated_ccw() for p in self.manipulator]
+
+        self.int_direction = (self.int_direction + direction) & 3
+
+
 class Game:
     def __init__(self, task: GridTask):
         self.task = task
@@ -87,7 +96,7 @@ class Game:
 
         # you should always call the zero's bot action explicitely,
         # even if it's Z, since he counts turns
-        
+
         act = action.s
         bot = self.bots[bot_index]
 
@@ -99,6 +108,7 @@ class Game:
             return True
 
         self.pending_boosters = [x for x in self.pending_boosters if get_booster(x)]
+
 
         if act in 'WSAD':
             for step in range(2 if bot.wheels_timer else 1):
@@ -119,7 +129,6 @@ class Game:
                         break
                     else:
                         raise InvalidActionException(f'Can\'t move into a tile: {target!r}')
-
                 bot.pos = np
                 booster = [b for b in self.boosters if b.pos == bot.pos]
                 if booster:
@@ -130,16 +139,14 @@ class Game:
                         self.boosters.remove(booster)
                 self.update_wrapped()
 
-        elif act == 'Z':
-            pass
-
         elif act == 'Q':
-            bot.manipulator = [p.rotated_ccw() for p in bot.manipulator]
-            bot.int_direction = (bot.int_direction - 1) & 3
+            bot.rotate(-1)
 
         elif act == 'E':
-            bot.manipulator = [p.rotated_cw() for p in bot.manipulator]
-            bot.int_direction = (bot.int_direction + 1) & 3
+            bot.rotate(1)
+
+        elif act == 'Z':
+            pass
 
         elif act in 'LFR':
             if not self.inventory[act]:
@@ -183,7 +190,7 @@ class Game:
 
 
         else:
-            raise InvalidActionException(f'Unknown action {action}')
+            raise InvalidActionException(f'Unsupported action {action}')
 
 
         self.update_wrapped()
@@ -197,4 +204,83 @@ class Game:
 
     def get_actions(self):
         return [b.actions for b in self.bots]
+
+
+class BacktrackingGame:
+    'An ethereal version of Game that only supports movement actions but with efficient backtracking'
+    def __init__(self, game: Game, bot: Bot):
+        self.game = game
+
+        self.bot = copy(bot)
+        self.wrapped = game._wrapped.copy() # better copy one time than try to ensure full rollback
+        self.remaining_unwrapped = game.remaining_unwrapped
+
+        # A super-clever way to provide an immutable interface on top of mutable implementation with
+        # zero overhead in backtracking usecase.
+        self._child : BacktrackingGame = None
+        self._revert_action = None
+        self._reverted = False
+
+
+    def _create_child(self, revert):
+        # bypass __init__
+        child = self._child = BacktrackingGame.__new__(BacktrackingGame)
+
+        child.game = self.game
+        child.bot = self.bot
+        child.wrapped = self.wrapped
+        child.remaining_unwrapped = self.remaining_unwrapped
+
+        child._child = None
+        child._revert_action = revert
+        child._reverted = False
+
+
+    def _activate(self):
+        assert not self._reverted
+        if self._child:
+            self._child._revert()
+            self._child = None
+
+
+    def _revert(self):
+        self._activate() # will revert children
+        self._revert_action()
+        self._reverted = True
+
+
+    def apply_action(self, action: Action):
+        self._activate()
+
+        act = action.s
+        bot = self.bot
+
+        if act in 'WSAD':
+            revert_infos = []
+            for step in range(2 if bot.wheels_timer else 1):
+                np = bot.pos + action.WSAD2DIR[act]
+                if not self.in_bounds(np):
+                    raise InvalidActionException('Can\'t move out of map boundary')
+
+                target = self.grid[np]
+                if target != '.': # don't support drilling
+                    if not step:
+                        raise InvalidActionException(f'Can\'t move into a tile: {target!r}')
+                    else:
+                        break
+
+                bot.pos = np
+                revert_infos.append(self.update_wrapped())
+            revert_infos.reverse()
+            return _init_child(lambda: [self.update_wrapped(r) for r in revert_infos])
+
+        elif act in 'QE':
+            direction = -1 if act == 'Q' else 1
+            bot.rotate(direction)
+            revert_info = self.update_wrapped()
+            return _init_child(lambda: (bot.rotate(-direction), self.update_wrapped(revert_info)))
+
+        else:
+            raise InvalidActionException(f'Unsupported action {action}')
+
 
