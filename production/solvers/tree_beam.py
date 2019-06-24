@@ -2,7 +2,7 @@ import logging
 logger = logging.getLogger(__name__)
 import time
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Any
 from collections import deque
 from copy import deepcopy
 
@@ -11,6 +11,7 @@ from production.data_formats import *
 from production.geom import poly_bb, rasterize_poly, visible
 from production.solvers.interface import *
 from production.game import Game, BacktrackingGame, InvalidActionException
+from pprint import pprint
 
 
 def bfs_extract_path(node, visited):
@@ -22,7 +23,7 @@ def bfs_extract_path(node, visited):
     return path
 
 
-def calculate_distance_field(source: Pt, target: Pt):
+def calculate_distance_field(game: Game, source: Pt, target: Pt):
     # Calculate and return a distance field from the target, over visited cells only
     sentinel = object()
     front = deque([source, sentinel])
@@ -46,10 +47,19 @@ def calculate_distance_field(source: Pt, target: Pt):
                     game.is_passable(p2)):
                 distfield[p2] = generation
                 front.append(p2)
+                if p2 == target:
+                    found = True
     return distfield
 
 
-def get_action(game: Game, max_depth: int, distfield):
+def print_distfield(game, distfield):
+    g = CharGrid(game.height, game.width, '.')
+    for p, d in distfield.items():
+        g[p] = chr(ord('0') + d)
+    print(g.grid_as_text())
+
+
+def get_action(game: Game, max_depth: int, distfield, target: Pt):
     game = BacktrackingGame(game, game.bots[0])
     t = time.perf_counter()
 
@@ -63,8 +73,7 @@ def get_action(game: Game, max_depth: int, distfield):
     #     # HACK: in large wrapped spaces don't think too hard
     #     max_depth = min(3, max_depth)
 
-    oldt, t = t, time.perf_counter()
-    logging.info(f'turn={game.turn} unwrapped={game.remaining_unwrapped}')
+    logging.info(f'turn={game.turn} pos={game.bot.pos} target={target} d={game.bot.pos.manhattan_dist(target)} unwrapped={game.remaining_unwrapped}')
 
     scores = {}
     best_score, best_action = -99999, None
@@ -150,11 +159,11 @@ def attach_lined(game: Game, botindex = 0):
     game.apply_action(Action.attach(candidate.x, candidate.y))
 
 
-#@dataclass
+@dataclass
 class Treenode:
     pos: Pt
-    parent: 'Treenode'
-    children: List['Treenode'] = []
+    parent: Any
+    children: Any = dataclasses.field(default_factory=list)
     # counts include this node
     children_cnt: int = 0
     wrapped_children_cnt: int = 0
@@ -162,8 +171,8 @@ class Treenode:
     def fill_stats(self, game: Game):
         self.children_cnt = 1
         self.wrapped_children_cnt = game.is_wrapped(self.pos)
-        for c in node.children:
-            cnt, wcnt = fill_stats(c)
+        for c in self.children:
+            cnt, wcnt = c.fill_stats(game)
             self.children_cnt += cnt
             self.wrapped_children_cnt += wcnt
         return self.children_cnt, self.wrapped_children_cnt
@@ -191,8 +200,6 @@ class Treenode:
         return self.parent.get_next_unwrapped()
 
 
-
-
 def calculate_spanning_tree(game: Game, pos: Pt):
     front = deque([pos])
     visited = {pos: Treenode(pos, None)}
@@ -200,13 +207,14 @@ def calculate_spanning_tree(game: Game, pos: Pt):
 
     while front:
         p = front.popleft()
+        pnode = visited[p]
         for d in Action.DIRS.keys():
             p2 = p + d
             if (    p2 not in visited
                     and game.in_bounds(p2)
                     and game.is_passable(p2)):
-                visited[p2] = Treenode(p2, p)
-                visited[p].children.append(visited[p2])
+                visited[p2] = Treenode(p2, pnode)
+                pnode.children.append(visited[p2])
                 front.append(p2)
 
     visited[pos].fill_stats(game)
@@ -225,13 +233,21 @@ def solve(task: Task, max_depth) -> Tuple[int, List[List[Action]], dict]:
             logger.info('attach extension')
             attach_lined(game)
 
-
+        bot = game.bots[0]
         if target is None:
-            target = spanning_tree[game.bot.pos].get_next_unwrapped().pos
-            distfield = calculate_distance_field(target, game.bot.pos)
+            target = spanning_tree[bot.pos].get_next_unwrapped().pos
+            distfield = calculate_distance_field(game, target, bot.pos)
+            # print_distfield(game, distfield)
 
-        action = get_action(game, max_depth, distfield)
-        game.apply_action(action)
+        action = get_action(game, max_depth, distfield, target)
+        assert action
+        wrap_updates = game.apply_action(action)
+        for p in wrap_updates:
+            assert game.is_wrapped(p)
+            spanning_tree[p].wrap()
+
+        if game.is_wrapped(target):
+            target = None
 
     score = game.finished()
     logger.info(game.inventory)
@@ -275,9 +291,9 @@ if __name__ == '__main__':
         level=logging.INFO,
         format='%(levelname).1s %(module)10.10s:%(lineno)-4d %(message)s')
 
-    from importlib.util import find_spec
-    if find_spec('hintcheck'):
-        import hintcheck
-        hintcheck.hintcheck_all_functions()
+    # from importlib.util import find_spec
+    # if find_spec('hintcheck'):
+    #     import hintcheck
+    #     hintcheck.hintcheck_all_functions()
 
     main()

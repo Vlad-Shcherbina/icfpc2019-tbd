@@ -80,12 +80,14 @@ class Game:
 
 
     def update_wrapped(self):
+        wrap_updates = []
         for bot in self.bots:
             delta = manipulators_will_wrap(self.grid, self._wrapped, bot.pos, bot.manipulator)
             num_changed = self._wrapped.update_values(delta, 1)
             assert num_changed == len(delta)
             self._remaining_unwrapped -= num_changed
-            bot.last_delta = delta
+            wrap_updates.extend(delta)
+        return wrap_updates
 
 
     def is_wrapped(self, p):
@@ -104,6 +106,7 @@ class Game:
 
         # you should always call the zero's bot action explicitely,
         # even if it's Z, since he counts turns
+        wrap_updates = []
 
         act = action.s
         bot = self.bots[bot_index]
@@ -147,7 +150,7 @@ class Game:
                         self.pending_boosters.append((booster.code, self.turn, bot_index))
                         # self.inventory.update([booster.code])
                         self.boosters.remove(booster)
-                self.update_wrapped()
+                wrap_updates.extend(self.update_wrapped())
 
         elif act == 'Q':
             bot.rotate(-1)
@@ -202,13 +205,14 @@ class Game:
             raise InvalidActionException(f'Unsupported action {action}')
 
 
-        self.update_wrapped()
+        wrap_updates.extend(self.update_wrapped())
         bot.actions.append(action)
         if bot_index == 0:
             self.turn += 1
         for bot in self.bots:
             bot.drill_timer = max(bot.drill_timer - 1, 0)
             bot.wheels_timer = max(bot.wheels_timer - 1, 0)
+        return wrap_updates
 
 
     def get_actions(self):
