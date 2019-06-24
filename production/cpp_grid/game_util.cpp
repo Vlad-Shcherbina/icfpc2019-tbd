@@ -48,6 +48,19 @@ vector<Pt> manipulators_will_wrap(
 }
 
 
+vector<Pt> list_unwrapped(const ByteGrid &wrapped) {
+    vector<Pt> result;
+    for (int y = 0; y < wrapped.get_height(); y++) {
+        for (int x = 0; x < wrapped.get_width(); x++) {
+            if (!wrapped[Pt(x, y)]) {
+                result.push_back(Pt(x, y));
+            }
+        }
+    }
+    return result;
+}
+
+
 const int INF = 9999;
 
 const vector<Pt> dirs = {Pt(1, 0), Pt(0, 1), Pt(-1, 0), Pt(0, -1)};
@@ -91,6 +104,7 @@ struct DistanceField {
 void init_game_util_bindings(py::module &m) {
     m.def("visible", &visible);
     m.def("manipulators_will_wrap", &manipulators_will_wrap);
+    m.def("list_unwrapped", &list_unwrapped);
 
     py::class_<DistanceField>(m, "DistanceField")
         .def(py::init<const CharGrid &>())

@@ -45,6 +45,11 @@ class Game:
         self.turn = 0
 
         self._wrapped = ByteGrid(self.grid.height, self.grid.width)
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.grid[Pt(x, y)] != '.':
+                    self._wrapped[Pt(x, y)] = 1
+
         self._remaining_unwrapped = sum(1 for _, c in self.enumerate_grid() if c == '.')
 
         self.update_wrapped()
@@ -122,6 +127,8 @@ class Game:
                         # "im not owned!  im not owned!!", the wall continues to insist
                         # as it slowly shrinks and transforms into a corn cob
                         self.grid[np] = '.'
+                        assert self._wrapped[np]
+                        self._wrapped[np] = 0
                         self._remaining_unwrapped += 1
                     elif step:
                         # second step, OK to fail
