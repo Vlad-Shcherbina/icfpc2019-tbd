@@ -275,7 +275,7 @@ class Action:
 
     @staticmethod
     def teleport(x, y):
-        return Action(f'B({x},{y})')
+        return Action(f'T({x},{y})')
 
     @staticmethod
     def clone():

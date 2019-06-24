@@ -183,7 +183,6 @@ class Game:
 
 
         elif act.startswith('T'):
-            self.inventory.subtract('T')
             pt = Pt_parse(act[1:])
             if pt not in self.teleport_spots:
                 raise InvalidActionException("no teleport at destination")
