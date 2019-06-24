@@ -97,7 +97,8 @@ class GreedySolver(Solver):
 def main():
     s = Path(utils.project_root() / 'tasks' / 'part-1-examples' / 'example-01.desc').read_text()
     task = Task.parse(s)
-    sol = solve(task)
+    expected_score, sol, extra = solve(task)
+    print('expected score', expected_score)
     sol = compose_actions(sol)
     print(sol)
     print(len(sol), 'time units')
