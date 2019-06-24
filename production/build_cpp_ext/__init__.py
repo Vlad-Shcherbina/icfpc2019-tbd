@@ -10,7 +10,7 @@ def magic_extension(*, name, sources, headers):
     caller_file = inspect.stack()[1].filename
     assert os.path.basename(caller_file) == '__init__.py', caller_file
 
-    release = os.getenv('TBD_RELEASE', '0')
+    release = os.getenv('TBD_RELEASE', '1')
     assert release in ('0', '1'), release
     release = release == '1'
 

@@ -109,7 +109,7 @@ def get_action(game: Game, max_depth: int):
         bot = game.bots[0]
 
         success = game.is_wrapped(target)
-        delay_penalty = -2.0
+        delay_penalty = -2
 
         # game.turn and distfield[bot.pos] essentially count the same thing and negate each other,
         # but:
@@ -170,7 +170,7 @@ def solve(task: Task, max_depth) -> Tuple[int, List[List[Action]], dict]:
     return score, game.get_actions(), extra
 
 
-class GreedySolver(Solver):
+class GreedyBeamSolver(Solver):
     def __init__(self, args: List[str]):
         [] = args
         self.max_depth = 5
