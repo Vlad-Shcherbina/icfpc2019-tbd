@@ -107,13 +107,6 @@ public:
 };
 
 
-
-std::ostream& operator<<(std::ostream& out, Pt p) {
-    out << "(" << p.x << ", " << p.y << ')';
-    return out;
-}
-
-
 class BoostFinder : public BFS_BaseWalker {
 public:
     CharGrid& grid;

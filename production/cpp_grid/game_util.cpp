@@ -1,4 +1,6 @@
 #include "basics.h"
+#include "debug.h"
+#include "pretty_printing.h"
 
 //#include <stdio.h>
 #include <pybind11/pybind11.h>
@@ -46,7 +48,53 @@ vector<Pt> manipulators_will_wrap(
 }
 
 
+const int INF = 9999;
+
+const vector<Pt> dirs = {Pt(1, 0), Pt(0, 1), Pt(-1, 0), Pt(0, -1)};
+
+struct DistanceField {
+    CharGrid grid;
+    IntGrid dist;
+
+    DistanceField(const CharGrid &grid)
+    : grid(grid), dist(grid.get_height(), grid.get_width(), INF) {}
+
+    void build(const vector<Pt> &starts) {
+        vector<Pt> front = starts;
+        for (Pt p : front) {
+            assert(grid[p] == '.');
+            dist[p] = 0;
+        }
+        vector<Pt> new_front;
+        int cur_dist = 1;
+        while (!front.empty()) {
+            for (Pt p : front) {
+                for (Pt d : dirs) {
+                    Pt p2 = p + d;
+                    if (grid.in_bounds(p2) && grid[p2] == '.') {
+                        if (dist[p2] == INF) {
+                            dist[p2] = cur_dist;
+                            new_front.push_back(p2);
+                        }
+                    }
+                }
+            }
+            cur_dist++;
+            using std::swap;
+            swap(front, new_front);
+            new_front.clear();
+        }
+    }
+};
+
+
 void init_game_util_bindings(py::module &m) {
     m.def("visible", &visible);
     m.def("manipulators_will_wrap", &manipulators_will_wrap);
+
+    py::class_<DistanceField>(m, "DistanceField")
+        .def(py::init<const CharGrid &>())
+        .def("build", &DistanceField::build)
+        .def_readonly("dist", &DistanceField::dist)
+        ;
 }
