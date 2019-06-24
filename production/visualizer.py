@@ -125,7 +125,10 @@ class Display:
 
         def char(p, char, fgcolor):
             offset = Pt(1, 1)
-            bg_color = curses.COLOR_BLUE if game.is_wrapped(p) else curses.COLOR_BLACK
+            if game.in_bounds(p) and game.is_wrapped(p):
+                bg_color = curses.COLOR_BLUE
+            else:
+                bg_color = curses.COLOR_BLACK
             p = p + offset
             pad.addstr(self.height - p.y + 1, p.x * 2, char + ' ', colormapping[fgcolor, bg_color])
 
@@ -149,7 +152,10 @@ class Display:
 
         def char(p, char, fgcolor):
             offset = Pt(1, 1)
-            bg_color = curses.COLOR_BLUE if game.is_wrapped(p) else curses.COLOR_BLACK
+            if game.in_bounds(p) and game.is_wrapped(p):
+                bg_color = curses.COLOR_BLUE
+            else:
+                bg_color = curses.COLOR_BLACK
             p = p + offset
             pad.addstr(self.height - p.y + 1, p.x * 2, char + ' ', colormapping[fgcolor, bg_color])
 
@@ -175,7 +181,7 @@ class Display:
         for b in game.bots:
             for m in bot.manipulator:
                 w = b.pos + m
-                if m.in_bounds(w) and geom.visible(self.grid, b.pos, w):
+                if game.in_bounds(w) and geom.visible(game.grid, b.pos, w):
                     char(m, '*', FgColors.Manipulator)
 
         for b in game.bots:
