@@ -23,7 +23,7 @@ class InsectSolver(Solver):
         [] = args
 
     def scent(self) -> str:
-        return 'insect1'
+        return 'insect2'
 
     def solve(self, task: str) -> SolverResult:
         task = Task.parse(task)
@@ -46,36 +46,81 @@ class InsectSolver(Solver):
             cnt += 1
             if cnt % 200 == 0:
                 logging.info(f'{len(game.bots)} bots; {game.remaining_unwrapped} unwrapped')
-            #logging.info(game.inventory)
-            need_clone = False
-            need_spawn = False
+
+            used_bots = [False for bot in game.bots]
+            actions = [None for bot in game.bots]
+            orig_bots = game.bots[:]
+
             if game.clone_spawn and game.inventory['C']:
                 logging.info('need spawn')
-                need_spawn = True
-            elif game.clone_spawn and not game.inventory['C'] and game.map_contains_booster('C'):
-                logging.info('need clone')
-                need_clone = True
-            # if game.clone_spawn and game.inventory['C']:
-            #     logging.info('can clone!')
+                df = DistanceField(game.grid)
+                df.build(game.clone_spawn)
+                dist = df.dist
 
-            orig_bots = game.bots[:]
+                best_rank = 1e10
+                best_bot = None
+                best_action = None
+                for bot_index, bot in enumerate(orig_bots):
+                    if dist[bot.pos] == 0:
+                        continue
+                    for d, a in Action.DIRS.items():
+                        p = bot.pos + d
+                        if not game.grid.in_bounds(p):
+                            continue
+                        rank = dist[p]
+                        if rank < best_rank:
+                            best_rank = rank
+                            best_bot = bot_index
+                            best_action = a
+                #assert best_bot is not None
+                #game.apply_action(best_action, best_bot)
+                if best_bot is not None:
+                    actions[best_bot] = best_action
+                    used_bots[best_bot] = True
+
+            boosters = [b.pos for b in game.boosters if b.code == 'C']
+            if not game.finished() and game.clone_spawn and not game.inventory['C'] and boosters and not all(used_bots):
+                df = DistanceField(game.grid)
+                df.build(boosters)
+                dist = df.dist
+
+                best_rank = 1e10
+                best_bot = None
+                best_action = None
+                for bot_index, bot in enumerate(orig_bots):
+                    if used_bots[bot_index]:
+                        continue
+                    for d, a in Action.DIRS.items():
+                        p = bot.pos + d
+                        if not game.grid.in_bounds(p):
+                            continue
+                        rank = dist[p]
+                        if rank < best_rank:
+                            best_rank = rank
+                            best_bot = bot_index
+                            best_action = a
+                assert best_bot is not None
+                actions[best_bot] = best_action
+                used_bots[best_bot] = True
+
+            if game.finished():
+                break
+
+            df = DistanceField(game.grid)
+            starts = list_unwrapped(game._wrapped)
+            df.build(starts)
+            dist = df.dist
+
             for bot_index, bot in enumerate(orig_bots):
                 if game.finished():
                     break
+                if used_bots[bot_index]:
+                    game.apply_action(actions[bot_index], bot_index)
+                    continue
                 if  game.inventory['C'] and bot.pos in game.clone_spawn:
                     game.apply_action(Action.clone(), bot_index)
                     logging.info('clone!!!')
                     continue
-
-                df = DistanceField(game.grid)
-                if need_spawn:
-                    df.build(game.clone_spawn)
-                elif need_clone:
-                    df.build([b.pos for b in game.boosters if b.code == 'C'])
-                else:
-                    starts = list_unwrapped(game._wrapped)
-                    df.build(starts)
-                dist = df.dist
 
                 best_rank = 1e10
                 best_action = None
@@ -87,7 +132,7 @@ class InsectSolver(Solver):
                     for j, bot2 in enumerate(orig_bots):
                         if j < bot_index:
                             d = bot.pos.manhattan_dist(bot2.pos)
-                            rank += 10 * max(0, (20 - d) / len(game.bots))
+                            rank += 10 * max(0, 20 - d)
                     if rank < best_rank:
                         best_rank = rank
                         best_action = a
