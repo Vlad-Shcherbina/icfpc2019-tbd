@@ -3,7 +3,7 @@ from copy import copy, deepcopy
 
 from production import utils
 import production.cpp_grid
-from production.cpp_grid import Pt, CharGrid
+from production.cpp_grid import Pt, CharGrid, ByteGrid, IntGrid
 
 def test_Pt():
     p1 = Pt(1, 2)
@@ -53,6 +53,27 @@ U V W X Y'''
 
     g3 = CharGrid([''.join(s.split()) for s in g.grid_as_text().split('\n')])
     assert g3 == g
+
+def test_num_grids():
+    g = ByteGrid(3, 5)
+    assert not g[Pt(1, 2)]
+    g[Pt(1, 2)] = 13
+    assert g[Pt(1, 2)] == 13
+    with raises(TypeError, match='incompatible function arguments'):
+        g[Pt(1, 2)] = 257
+    with raises(TypeError, match='incompatible function arguments'):
+        g[Pt(1, 2)] = -1
+
+    g = IntGrid(3, 5)
+    assert not g[Pt(1, 2)]
+    g[Pt(1, 2)] = 13
+    assert g[Pt(1, 2)] == 13
+    g[Pt(1, 2)] = 257
+    assert g[Pt(1, 2)] == 257
+    g[Pt(1, 2)] = -257
+    assert g[Pt(1, 2)] == -257
+    with raises(TypeError, match='incompatible function arguments'):
+        g[Pt(1, 2)] = 0x1_0000_0001
 
 
 if __name__ == '__main__':

@@ -12,7 +12,7 @@ At some point we'll write a grid class in C++, indexed with Pt's, which would mo
 
 '''
 
-from production.cpp_grid import Pt, CharGrid
+from production.cpp_grid import Pt, CharGrid, ByteGrid, IntGrid
 
 
 def Pt_parse(s):

@@ -97,25 +97,30 @@ const string to_string(const Pt & p) {
 }
 
 
-class CharGrid {
+template<typename T>
+class Grid {
     int height;
     int width;
 
-    vector<char> data;
+    static_assert(!std::is_same<T, bool>::value);
+    vector<T> data;
 
 public:
 
-    CharGrid() = delete;
-    CharGrid(const CharGrid&) = default;
-    CharGrid(CharGrid&&) = default;
+    using TValue = T;
+    using TGrid = Grid<T>;
+
+    Grid() = delete;
+    Grid(const TGrid &) = default;
+    Grid(TGrid &&) = default;
 
 
-    CharGrid(int a_height, int a_width, char _default=0):
+    Grid(int a_height, int a_width, T _default=0):
         height(a_height), width(a_width), data(height * width, _default)
     { }
 
 
-    CharGrid(const vector<string> & init):
+    Grid(const vector<string> & init):
         height((int)init.size()), width((int)init.at(0).size()), data(height * width)
     {
         for (int y = 0; y < height; y++) {
@@ -142,7 +147,7 @@ public:
     }
 
 
-    char& operator[](const Pt& pos) {
+    T& operator[](const Pt& pos) {
         if (in_bounds(pos)) {
             return data[pos.y * width + pos.x];
         }
@@ -150,12 +155,12 @@ public:
     }
 
 
-    char operator[](const Pt& pos) const {
-        return (*const_cast<CharGrid*>(this))[pos];
+    T operator[](const Pt& pos) const {
+        return (*const_cast<TGrid*>(this))[pos];
     }
 
 
-    int update_values(const std::vector<Pt> & points, char value) {
+    int update_values(const std::vector<Pt> & points, T value) {
         int updated = 0;
         for (auto p : points) {
             if ((*this)[p] != value) {
@@ -179,19 +184,25 @@ public:
         return res;
     }
 
-    bool operator==(const CharGrid& other) const {
+    bool operator==(const TGrid& other) const {
         return height == other.height && width == other.width && data == other.data;
     }
 
 
-    bool operator!=(const CharGrid& other) const {
+    bool operator!=(const TGrid& other) const {
         return !(*this == other);
     }
 
-    CharGrid copy() {
+    TGrid copy() {
         return *this;
     }
 };
+
+
+using CharGrid = Grid<char>;
+using ByteGrid = Grid<uint8_t>; // unsigned
+using IntGrid = Grid<int>;
+
 
 
 // ---------------- BFS walks -----------------------
@@ -312,7 +323,7 @@ public:
     : grid(grid)
     , wrapped(wrapped)
     , border(border)
-    , countdown(border.size())
+    , countdown((int)border.size())
     , boosters(boosters)
     , start(start)
     , last(start)
@@ -321,7 +332,7 @@ public:
     , manips(manips)
     , candidate(-1, -1)
     {
-        paths[start] = std::make_pair(0, vector<Pt>());
+        paths[start] = std::make_pair(0.0f, vector<Pt>());
         paths[start].second.push_back(start);
     }
 
@@ -379,6 +390,35 @@ public:
 // ---------------- BFS walks -----------------------
 
 
+template<class TGrid>
+void register_grid(py::module &m, const char * name) {
+    py::class_<TGrid>(m, name)
+        .def(py::init<int, int>())
+        .def(py::init<int, int, TGrid::TValue>())
+        .def(py::init<const TGrid&>())
+        .def(py::init<const vector<string>&>())
+        .def_property_readonly("width", &TGrid::get_width)
+        .def_property_readonly("height", &TGrid::get_height)
+        .def("__getitem__", [](const TGrid &a, const Pt& b) {
+                return a[b];
+            })
+        .def("__setitem__", [](TGrid &a, const Pt& b, TGrid::TValue c) {
+                a[b] = c;
+            })
+        .def("in_bounds", &TGrid::in_bounds)
+        .def("update_values", &TGrid::update_values)
+        // all copies are deep
+        .def("copy", [](const TGrid & a) { return TGrid(a); })
+        .def("__copy__", [](const TGrid & a) { return TGrid(a); })
+        .def("__deepcopy__", [](const TGrid & a, py::dict & memo) { return TGrid(a); })
+        .def("grid_as_text", &TGrid::grid_as_text)
+        .def("__str__", &TGrid::grid_as_text)
+        .def(py::self == py::self)
+        .def(py::self != py::self)
+        ;
+}
+
+
 PYBIND11_MODULE(cpp_grid_ext, m) {
     m.doc() = "pybind11 mine grid";
 
@@ -403,30 +443,9 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
         .def_readonly("y", &Pt::y)
         ;
 
-    py::class_<CharGrid>(m, "CharGrid")
-        .def(py::init<int, int>())
-        .def(py::init<int, int, char>())
-        .def(py::init<const CharGrid&>())
-        .def(py::init<const vector<string>&>())
-        .def_property_readonly("width", &CharGrid::get_width)
-        .def_property_readonly("height", &CharGrid::get_height)
-        .def("__getitem__", [](const CharGrid &a, const Pt& b) {
-                return a[b];
-            })
-        .def("__setitem__", [](CharGrid &a, const Pt& b, char c) {
-                a[b] = c;
-            })
-        .def("in_bounds", &CharGrid::in_bounds)
-        .def("update_values", &CharGrid::update_values)
-        // all copies are deep
-        .def("copy", [](const CharGrid & a) { return CharGrid(a); })
-        .def("__copy__", [](const CharGrid & a) { return CharGrid(a); })
-        .def("__deepcopy__", [](const CharGrid & a, py::dict & memo) { return CharGrid(a); })
-        .def("grid_as_text", &CharGrid::grid_as_text)
-        .def("__str__", &CharGrid::grid_as_text)
-        .def(py::self == py::self)
-        .def(py::self != py::self)
-        ;
+    register_grid<CharGrid>(m, "CharGrid");
+    register_grid<ByteGrid>(m, "ByteGrid");
+    register_grid<IntGrid>(m, "IntGrid");
 
     m.def("pathfind", [](CharGrid& grid, Pt start, Pt end){
         auto executor = new PathFinder(grid, start, end);

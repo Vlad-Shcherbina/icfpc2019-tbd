@@ -1,6 +1,6 @@
 from typing import Optional
 from collections import Counter
-from production.data_formats import GridTask, Action, Pt, Pt_parse, CharGrid, Booster, enumerate_grid
+from production.data_formats import GridTask, Action, Pt, Pt_parse, CharGrid, ByteGrid, Booster, enumerate_grid
 from production import geom
 
 
@@ -33,7 +33,7 @@ class Game:
         self.teleport_spots = []
         self.turn = 0
 
-        self._wrapped = CharGrid(self.grid.height, self.grid.width, ' ')
+        self._wrapped = ByteGrid(self.grid.height, self.grid.width)
         self._remaining_unwrapped = sum(1 for _, c in self.enumerate_grid() if c == '.')
 
         self.update_wrapped()
@@ -67,11 +67,11 @@ class Game:
     def update_wrapped(self):
         for bot in self.bots:
             self.recalc_manipulator(bot)
-            self._remaining_unwrapped -= self._wrapped.update_values(bot.world_manipulator, '*')
+            self._remaining_unwrapped -= self._wrapped.update_values(bot.world_manipulator, 1)
 
 
     def is_wrapped(self, p):
-        return self._wrapped[p] != ' '
+        return bool(self._wrapped[p])
 
 
     def finished(self) -> Optional[int]:

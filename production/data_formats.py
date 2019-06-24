@@ -5,7 +5,8 @@ from typing import ClassVar, Dict, Tuple
 from copy import copy
 
 from production import utils
-from production.geom import Pt, Pt_parse, CharGrid, Poly, List, parse_poly, poly_bb, rasterize_poly, enumerate_grid
+from production.geom import Pt, Pt_parse, CharGrid, ByteGrid, IntGrid
+from production.geom import Poly, List, parse_poly, poly_bb, rasterize_poly, enumerate_grid
 
 @dataclass
 class Puzzle:

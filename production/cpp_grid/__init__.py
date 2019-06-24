@@ -5,4 +5,4 @@ magic_extension(
     sources=['cpp_grid.cpp'],
     headers=[])
 
-from production.cpp_grid.cpp_grid_ext import Pt, CharGrid
+from production.cpp_grid.cpp_grid_ext import Pt, CharGrid, ByteGrid, IntGrid
