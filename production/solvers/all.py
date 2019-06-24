@@ -7,7 +7,7 @@ ALL_SOLVERS = {
     'greedy': GreedySolver,
     'rotator': RotatorSolver,
     'boosty': BoostySolver,
-    'greedy_beam': GreedyBeamSolver,
+    # 'greedy_beam': GreedyBeamSolver,
 }
 
 

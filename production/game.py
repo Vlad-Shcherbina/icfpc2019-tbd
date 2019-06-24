@@ -3,6 +3,8 @@ from collections import Counter
 from production.data_formats import GridTask, Action, Pt, Pt_parse, CharGrid, ByteGrid, Booster, enumerate_grid
 from production import geom
 from production.cpp_grid.cpp_grid_ext import manipulators_will_wrap
+from copy import copy
+
 
 class InvalidActionException(Exception):
     pass
@@ -276,4 +278,26 @@ class BacktrackingGame:
         else:
             raise InvalidActionException(f'Unsupported action {action}')
 
+
+    def in_bounds(self, p: Pt):
+        return self.game.grid.in_bounds(p)
+
+
+    def enumerate_grid(self):
+        return enumerate_grid(self.game.grid)
+
+
+    def size(self) -> Pt:
+        return Pt(self.game.width, self.game.height)
+
+
+    def update_wrapped(self):
+        delta = manipulators_will_wrap(self.grid, self._wrapped, bot.pos, bot.manipulator)
+        num_changed = self._wrapped.update_values(delta, 1)
+        assert num_changed == len(delta)
+        self._remaining_unwrapped -= num_changed
+
+
+    def is_wrapped(self, p):
+        return bool(self._wrapped[p])
 

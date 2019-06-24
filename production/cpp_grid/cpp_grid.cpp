@@ -4,6 +4,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/operators.h>
 #include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
 namespace py = pybind11;
 
 #include <functional>
@@ -232,7 +233,10 @@ void register_grid(py::module &m, const char * name) {
         ;
 }
 
+
 void init_game_util_bindings(py::module &m);
+
+PYBIND11_MAKE_OPAQUE(RevertInfo);
 
 PYBIND11_MODULE(cpp_grid_ext, m) {
     m.doc() = "pybind11 mine grid";
