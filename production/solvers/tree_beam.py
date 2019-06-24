@@ -156,7 +156,7 @@ def attach_lined(game: Game, botindex = 0):
             break
         i += 1
 
-    game.apply_action(Action.attach(candidate.x, candidate.y))
+    return Action.attach(candidate.x, candidate.y)
 
 
 @dataclass
@@ -225,19 +225,24 @@ def solve(task: Task, max_depth) -> Tuple[int, List[List[Action]], dict]:
     task = GridTask(task)
 
     game = Game(task)
-    spanning_tree = calculate_spanning_tree(game, game.bots[0].pos)
+    st_root = game.bots[0].pos
+    spanning_tree = calculate_spanning_tree(game, st_root)
     target = None
 
     while not game.finished():
         while game.inventory['B'] > 0:
             logger.info('attach extension')
-            attach_lined(game)
+            action = attach_lined(game)
+            wrap_updates = game.apply_action(action)
+            for p in wrap_updates:
+                assert game.is_wrapped(p)
+                spanning_tree[p].wrap()
 
         bot = game.bots[0]
         if target is None:
             target = spanning_tree[bot.pos].get_next_unwrapped().pos
             distfield = calculate_distance_field(game, target, bot.pos)
-            # print_distfield(game, distfield)
+            #print_distfield(game, distfield)
 
         action = get_action(game, max_depth, distfield, target)
         assert action
@@ -263,7 +268,7 @@ class TreeBeamSolver(Solver):
         self.max_depth = 5
 
     def scent(self) -> str:
-        return f'tree beam d={self.max_depth}'
+        return f'tree beam v2 d={self.max_depth}'
 
     def solve(self, task: str) -> SolverResult:
         task = Task.parse(task)
@@ -275,7 +280,7 @@ class TreeBeamSolver(Solver):
 
 
 def main():
-    problem = 11
+    problem = 10
     sol = TreeBeamSolver([]).solve(utils.get_problem_raw(problem))
     print(sol.extra)
     sol = sol.data
