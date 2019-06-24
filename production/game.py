@@ -18,6 +18,7 @@ class Bot:
         self.wheels_timer = 0
         self.drill_timer = 0
         self.actions = []
+        self.last_delta = []
 
 
     def rotate(self, direction: int):
@@ -84,6 +85,7 @@ class Game:
             num_changed = self._wrapped.update_values(delta, 1)
             assert num_changed == len(delta)
             self._remaining_unwrapped -= num_changed
+            bot.last_delta = delta
 
 
     def is_wrapped(self, p):

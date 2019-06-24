@@ -80,12 +80,6 @@ namespace std
 }
 
 
-inline std::ostream& operator<<(std::ostream& out, Pt p) {
-    out << "(" << p.x << ", " << p.y << ')';
-    return out;
-}
-
-
 inline const string my_to_string(const Pt & p) {
     return string("(" + std::to_string(p.x) + "," + std::to_string(p.y) + ")");
 }
