@@ -1,6 +1,6 @@
 from typing import Optional
 from collections import Counter
-from production.data_formats import GridTask, Action, Pt, Pt_parse, Booster, enumerate_grid
+from production.data_formats import GridTask, Action, Pt, Pt_parse, CharGrid, Booster, enumerate_grid
 from production import geom
 
 
@@ -33,9 +33,15 @@ class Game:
         self.teleport_spots = []
         self.turn = 0
 
-        self.wrapped = set()
-        self.unwrapped = {p for p, c in enumerate_grid(self.grid) if c == '.'}
+        self._wrapped = CharGrid(self.grid.height, self.grid.width, ' ')
+        self._remaining_unwrapped = sum(1 for _, c in self.enumerate_grid() if c == '.')
+
         self.update_wrapped()
+
+
+    @property
+    def remaining_unwrapped(self):
+        return self._remaining_unwrapped
 
 
     def in_bounds(self, p: Pt):
@@ -61,20 +67,23 @@ class Game:
     def update_wrapped(self):
         for bot in self.bots:
             self.recalc_manipulator(bot)
-            self.wrapped.update(bot.world_manipulator)
-            self.unwrapped.difference_update(bot.world_manipulator)
+            self._remaining_unwrapped -= self._wrapped.update_values(bot.world_manipulator, '*')
 
 
     def is_wrapped(self, p):
-        return p in self.wrapped
+        return self._wrapped[p] != ' '
 
 
     def finished(self) -> Optional[int]:
-        if self.unwrapped:
-            return None
+        if self._remaining_unwrapped:
+            return
         return self.turn
 
+
     def apply_action(self, action: Action, bot_index: int=0):
+        if self.finished():
+            raise InvalidActionException(f'Game already finished! bot {bot_index} tried to {action}')
+
         # you should always call the zero's bot action explicitely,
         # even if it's Z, since he counts turns
         act = action.s
@@ -99,7 +108,7 @@ class Game:
                         # "im not owned!  im not owned!!", the wall continues to insist
                         # as it slowly shrinks and transforms into a corn cob
                         self.grid[np] = '.'
-                        self.unwrapped.add(np)
+                        self._remaining_unwrapped += 1
                     elif step:
                         # second step, OK to fail
                         break

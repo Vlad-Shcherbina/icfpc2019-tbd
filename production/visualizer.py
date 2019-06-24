@@ -192,7 +192,7 @@ class Display:
         else:
             status_line = f'turn={game.turn} ' + \
                           f'pos=({bot.pos.x}, {bot.pos.y}) ' + \
-                          f'unwrapped={len(game.unwrapped)} '
+                          f'unwrapped={game.remaining_unwrapped} '
             status_line += ' '.join(f'{b}={game.inventory[b]}' for b in Booster.PICKABLE)
 
             if game.bots[self.current].wheels_timer:

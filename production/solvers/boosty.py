@@ -134,7 +134,7 @@ def solve(game, bestscore=None) -> Tuple[Optional[int], List[List[Action]], dict
         # t1 = time()
         cnt += 1
         if cnt % 1000 == 0:
-            logging.info(f'{len(game.unwrapped)} unwrapped')
+            logging.info(f'{game.remaining_unwrapped} unwrapped')
 
         boosts = [b.pos for b in game.boosters if b.code in ALLOWED]
         penalty = (game.grid.height + game.grid.width) * 2
@@ -148,7 +148,6 @@ def solve(game, bestscore=None) -> Tuple[Optional[int], List[List[Action]], dict
         # print()
         # print(bot.pos)
 
-        # print("unwrapped:", game.unwrapped)
         # print("path: ", path)
         assert len(path) > 1
         if len(path) > 2:

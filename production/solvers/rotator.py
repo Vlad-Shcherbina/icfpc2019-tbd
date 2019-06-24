@@ -35,7 +35,7 @@ def solve(task: Task, turns: str, bestscore=None) -> Tuple[Optional[int], List[L
     while not game.finished():
         cnt += 1
         if cnt % 1000 == 0:
-            logging.info(f'{len(game.unwrapped)} unwrapped')
+            logging.info(f'{game.remaining_unwrapped} unwrapped')
         extensions = {b.pos for b in game.boosters if b.code == 'B'}
         prev = {game.bots[0].pos: None}
         frontier = [game.bots[0].pos]
@@ -48,10 +48,9 @@ def solve(task: Task, turns: str, bestscore=None) -> Tuple[Optional[int], List[L
                     rank += 5
                 for m in game.bots[0].manipulator:
                     q = p + m
-                    # TODO: visibility and bounds check
                     if (game.in_bounds(q) and
                         game.grid[q] == '.' and
-                        q in game.unwrapped and
+                        not game.is_wrapped(q) and
                         visible(game.grid, q, p)):
                         rank += 1
                 if rank > best_rank:

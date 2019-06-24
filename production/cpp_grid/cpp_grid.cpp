@@ -114,7 +114,7 @@ public:
         height(a_height), width(a_width), data(height * width, _default)
     { }
 
-    
+
     CharGrid(const vector<string> & init):
         height((int)init.size()), width((int)init.at(0).size()), data(height * width)
     {
@@ -152,6 +152,18 @@ public:
 
     char operator[](const Pt& pos) const {
         return (*const_cast<CharGrid*>(this))[pos];
+    }
+
+
+    int update_values(const std::vector<Pt> & points, char value) {
+        int updated = 0;
+        for (auto p : points) {
+            if ((*this)[p] != value) {
+                (*this)[p] = value;
+                updated++;
+            }
+        }
+        return updated;
     }
 
 
@@ -251,7 +263,7 @@ public:
     }
 
     bool is_suitable(const Pt& p) override {
-        return grid[p] == '.' 
+        return grid[p] == '.'
             && paths.find(p) == paths.end();
     }
 
@@ -314,7 +326,7 @@ public:
     }
 
     bool is_suitable(const Pt& p) override {
-        return grid[p] == '.' 
+        return grid[p] == '.'
             && paths.find(p) == paths.end();
     }
 
@@ -405,6 +417,7 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
                 a[b] = c;
             })
         .def("in_bounds", &CharGrid::in_bounds)
+        .def("update_values", &CharGrid::update_values)
         // all copies are deep
         .def("copy", [](const CharGrid & a) { return CharGrid(a); })
         .def("__copy__", [](const CharGrid & a) { return CharGrid(a); })
@@ -431,7 +444,7 @@ PYBIND11_MODULE(cpp_grid_ext, m) {
                           vector<Pt>& boosts,
                           float boost_tradeoff,
                           float wrap_penalty) {
-        BoostFinder* executor = new BoostFinder(grid, wrapped, start, manips, 
+        BoostFinder* executor = new BoostFinder(grid, wrapped, start, manips,
                                     borders, boosts, boost_tradeoff, wrap_penalty);
         bfs(grid, start, executor);
         vector<Pt> result = executor->paths[executor->candidate].second;

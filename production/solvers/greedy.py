@@ -19,7 +19,7 @@ def solve(task: Task) -> Tuple[int, List[List[Action]], dict]:
     while not game.finished():
         cnt += 1
         if cnt % 1000 == 0:
-            logging.info(f'{len(game.unwrapped)} unwrapped')
+            logging.info(f'{game.remaining_unwrapped} unwrapped')
         prev = {game.bots[0].pos: None}
         frontier = [game.bots[0].pos]
         while frontier:
@@ -29,10 +29,9 @@ def solve(task: Task) -> Tuple[int, List[List[Action]], dict]:
                 rank = 0
                 for m in game.bots[0].manipulator:
                     q = p + m
-                    # TODO: visibility and bounds check
                     if (game.in_bounds(q) and
                         game.grid[q] == '.' and
-                        q in game.unwrapped and
+                        not game.is_wrapped(q) and
                         visible(game.grid, q, p)):
                         rank += 1
                 if rank > best_rank:

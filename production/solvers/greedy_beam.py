@@ -90,7 +90,7 @@ def get_action(game: Game, max_depth: int):
         max_depth = min(3, max_depth)
 
     oldt, t = t, time.perf_counter()
-    logging.info(f'turn={game.turn} unwrapped={len(game.unwrapped)} found target d={distance_to_target} and computed distfield in {t - oldt:0.3f}')
+    logging.info(f'turn={game.turn} unwrapped={game.remaining_unwrapped} found target d={distance_to_target} and computed distfield in {t - oldt:0.3f}')
 
     def apply_action(game: Game, action: Action):
         game = deepcopy(game)
@@ -119,7 +119,7 @@ def get_action(game: Game, max_depth: int):
         # - don't reward success beyond the naturally better score because of the above penalties
         # - only compare best scores for completed searchesso that the first point holds (otherwise
         #   node score can be worse than that of its children)
-        score = len(game.wrapped)
+        score = -game.remaining_unwrapped
         score += game.turn * delay_penalty
         if not success:
             score += distfield[bot.pos] * delay_penalty
