@@ -23,7 +23,7 @@ class InsectSolver(Solver):
         [] = args
 
     def scent(self) -> str:
-        return 'insect2'
+        return 'insect3 extension'
 
     def solve(self, task: str) -> SolverResult:
         task = Task.parse(task)
@@ -121,6 +121,10 @@ class InsectSolver(Solver):
                     game.apply_action(Action.clone(), bot_index)
                     logging.info('clone!!!')
                     continue
+                if game.inventory['B'] > 0:
+                    logger.info('attach extension')
+                    game.apply_action(Action.attach(1, len(game.bots[0].manipulator) - 2))
+                    continue
 
                 best_rank = 1e10
                 best_action = None
@@ -132,7 +136,7 @@ class InsectSolver(Solver):
                     for j, bot2 in enumerate(orig_bots):
                         if j < bot_index:
                             d = bot.pos.manhattan_dist(bot2.pos)
-                            rank += 10 * max(0, 20 - d)
+                            rank += 10 * max(0, 30 - d)
                     if rank < best_rank:
                         best_rank = rank
                         best_action = a
