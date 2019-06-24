@@ -190,6 +190,13 @@ def view_solution(id):
     if data is not None:
         data = zlib.decompress(data)
 
+    cur.execute(
+        'SELECT name, data '
+        'FROM tasks WHERE id = %s',
+        [task_id])
+    [task_name, task_data] = cur.fetchone()
+    task_data = zlib.decompress(task_data)
+
     return memoized_render_template_string(VIEW_SOLUTION_TEMPLATE, **locals())
 
 VIEW_SOLUTION_TEMPLATE = '''\
@@ -208,8 +215,10 @@ Extra:
 <pre>{{ extra.get('solver', {}).get('tb') }}</pre>
 {% endif %}
 
+<a href="{{ task_data | data_uri }}" download="{{task_name}}.desc">download task</a>
 {% if data %}
-<a href="{{ data | data_uri }}" download="sol-{{id}}.sol">download solution</a>
+<br>
+<a href="{{ data | data_uri }}" download="{{task_name}}-sol-{{id}}.sol">download solution</a>
 {% endif %}
 
 {% endblock %}
