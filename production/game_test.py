@@ -139,6 +139,18 @@ def test_error(actions):
     actions = Action.parse(actions)
     run_for_errors(actions)
 
+def test_clone_errors():
+    actionlist = [Action.parse('DDDDDDDDAAAAAAWWWWWWWWWAACSSSSSSSS'),
+                  Action.parse('DDDDDLDZ')]
+    try:
+        run_cloned_game(actionlist)
+    except InvalidActionException:
+        return
+    else:
+        assert False
+
+
+
 
 if __name__ == '__main__':
     utils.testmod()

@@ -153,7 +153,7 @@ class Display:
             p = p + offset
             pad.addstr(self.height - p.y + 1, p.x * 2, char + ' ', colormapping[fgcolor, bg_color])
 
-        bot = game.bots[self.current]
+        bot = game.bots[(self.current - 1) % len(game.bots)]
         area = max(bot.pos.manhattan_dist(bot.pos + m) for m in bot.manipulator)
 
         for y in range(bot.pos.y - area, bot.pos.y + area + 1):
@@ -179,7 +179,7 @@ class Display:
         for b in game.bots:
             char(b.pos, '@', FgColors.InactivePlayer)
 
-        char(bot.pos, '@', FgColors.Player)
+        char(game.bots[self.current].pos, '@', FgColors.Player)
 
 
         offset = self.screen_offset(game.size(), bot.pos)
@@ -282,7 +282,7 @@ def interactive(task_number):
 
     if score is not None:
         print(f'Score: {score}')
-        result = validate_replay(task_data, score, game.get_actions())
+        result = validate_replay(task_data, score, game.get_actions())        
         print(result)
         if use_db:
             submit_replay(conn, task_id, result)

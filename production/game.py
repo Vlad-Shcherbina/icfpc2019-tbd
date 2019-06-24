@@ -80,6 +80,13 @@ class Game:
         act = action.s
         bot = self.bots[bot_index]
 
+        booster = [b for b in self.boosters if b.pos == bot.pos]
+        if booster:
+            [booster] = booster
+            if booster.code in Booster.CODES:
+                self.inventory.update([booster.code])
+                self.boosters.remove(booster)
+
         if act in 'WSAD':
             for step in range(2 if bot.wheels_timer else 1):
                 np = bot.pos + action.WSAD2DIR[act]
@@ -100,12 +107,6 @@ class Game:
                         raise InvalidActionException(f'Can\'t move into a tile: {target!r}')
 
                 bot.pos = np
-                booster = [b for b in self.boosters if b.pos == np]
-                if booster:
-                    [booster] = booster
-                    if booster.code in Booster.CODES:
-                        self.inventory.update([booster.code])
-                        self.boosters.remove(booster)
                 self.update_wrapped()
 
         elif act == 'Z':
