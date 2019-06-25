@@ -201,7 +201,7 @@ template<class TGrid>
 void register_grid(py::module &m, const char * name) {
     py::class_<TGrid>(m, name)
         .def(py::init<int, int>())
-        .def(py::init<int, int, TGrid::TValue>())
+        .def(py::init<int, int, typename TGrid::TValue>())
         .def(py::init<const TGrid&>())
         .def(py::init<const vector<string>&>())
         .def_property_readonly("width", &TGrid::get_width)
@@ -209,7 +209,7 @@ void register_grid(py::module &m, const char * name) {
         .def("__getitem__", [](const TGrid &a, const Pt& b) {
                 return a[b];
             })
-        .def("__setitem__", [](TGrid &a, const Pt& b, TGrid::TValue c) {
+        .def("__setitem__", [](TGrid &a, const Pt& b, typename TGrid::TValue c) {
                 a[b] = c;
             })
         .def("in_bounds", &TGrid::in_bounds)
