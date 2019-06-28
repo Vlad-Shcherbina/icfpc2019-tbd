@@ -18,6 +18,7 @@ def list_tasks():
         SELECT
             tasks.invocation_id,
             tasks.id, tasks.name,
+            tasks.stats,
             tasks.extra
         FROM tasks
         ORDER BY tasks.id ASC
@@ -29,11 +30,12 @@ LIST_TASKS_TEMPLATE = '''\
 {% block body %}
 <h3>Tasks</h3>
 <table>
-{% for task_inv_id, task_id, task_name, task_extra in cur %}
+{% for task_inv_id, task_id, task_name, task_stats, task_extra in cur %}
     <tr>
         <td>{{ ('/inv/%s' % task_inv_id) | linkify }}</td>
         <td>{{ ('/task/%s' % task_id) | linkify }}</td>
         <td>{{ task_name }}</td>
+        <td>{{ task_stats }}</td>
         <td>{{ task_extra.get('legend', '') }}</td>
     </tr>
 {% endfor %}
@@ -49,10 +51,11 @@ def view_task(id):
         SELECT
             name,
             data,
+            stats,
             extra
         FROM tasks WHERE id = %s''',
         [id])
-    [name, data, extra] = cur.fetchone()
+    [name, data, stats, extra] = cur.fetchone()
 
     s = zlib.decompress(data).decode()
     task = Task.parse(s)
@@ -86,6 +89,7 @@ VIEW_TASK_TEMPLATE = '''\
 {% block body %}
 <h3>Task info</h3>
 Name: {{ name }} <br>
+Stats: <pre>{{ stats | json_dump }}</pre>
 Extra: <pre>{{ extra | json_dump }}</pre>
 <pre>
 # - wall
