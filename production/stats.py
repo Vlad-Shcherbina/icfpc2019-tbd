@@ -76,18 +76,16 @@ def main():
         if score < score_by_task[task_id]:
             score_by_task[task_id] = score
             normalized_score = log(stats['width'] * stats['height'], 2) * \
-                max(scores[task_id].values()) / score
+                min(scores[task_id].values()) / score
             norm_score_by_task[task_id] = normalized_score
 
             xs.append((time - deadline).total_seconds() / 3600)
             ys.append(sum(norm_score_by_task.values()))
-    #print(sum(norm_score_by_task.values()))
-#    print(xs, ys)
+
     plt.plot(xs, ys)
     plt.xlabel('time to deadline, hours')
     plt.ylabel('score')
     plt.show()
-    # plt.savefig(utils.project_root() / 'outputs/stats.png')
 
 
 if __name__ == '__main__':
